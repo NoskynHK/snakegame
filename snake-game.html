@@ -1,0 +1,3080 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        :root {
+            --difficulty: medium;
+            --bg-primary: rgba(255, 255, 255, 0.95);
+            --bg-secondary: #f0f0f0;
+            --text-primary: #333;
+            --text-secondary: #666;
+            --border-color: #ddd;
+            --canvas-bg: #1a1a2e;
+            --canvas-border: #333;
+        }
+
+        body.dark-mode {
+            --bg-primary: #1e1e2e;
+            --bg-secondary: #2a2a3e;
+            --text-primary: #e0e0e0;
+            --text-secondary: #b0b0b0;
+            --border-color: #444;
+            --canvas-bg: #0f0f1e;
+            --canvas-border: #555;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+        }
+
+        .game-container {
+            text-align: center;
+            background: var(--bg-primary);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        h1 {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+
+        .info {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 20px;
+            gap: 20px;
+        }
+
+        .score-box, .level-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+
+        canvas {
+            border: 4px solid var(--canvas-border);
+            background-color: var(--canvas-bg);
+            display: block;
+            margin: 20px auto;
+            cursor: pointer;
+            border-radius: 10px;
+        }
+
+        .controls {
+            margin-top: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1em;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            font-weight: bold;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .instructions {
+            margin-top: 20px;
+            color: var(--text-secondary);
+            font-size: 0.9em;
+            text-align: left;
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+
+        .instructions h3 {
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            margin: 5px 0;
+            line-height: 1.6;
+        }
+
+        .game-over {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            text-align: center;
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            from {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: translate(-50%, -50%) scale(1);
+                opacity: 1;
+            }
+        }
+
+        .game-over h2 {
+            color: #764ba2;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+
+        .game-over p {
+            color: var(--text-secondary);
+            font-size: 1.2em;
+            margin: 10px 0;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+
+        .difficulty-selector {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #667eea;
+        }
+
+        .difficulty-selector h3 {
+            color: var(--text-primary);
+            margin-bottom: 15px;
+            font-size: 1.1em;
+        }
+
+        .difficulty-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .difficulty-btn {
+            background: var(--bg-primary);
+            border: 2px solid var(--border-color);
+            padding: 10px 20px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .difficulty-btn:hover {
+            border-color: #667eea;
+            background: #f9f9f9;
+        }
+
+        .difficulty-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #764ba2;
+        }
+
+        .achievements-section {
+            margin-top: 30px;
+        }
+
+        .achievements-btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .achievements-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .achievements-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 1100;
+            width: 90%;
+            max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .achievements-modal h2 {
+            color: #764ba2;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .achievements-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+
+        .achievement-card {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid #ddd;
+        }
+
+        .achievement-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .achievement-card.unlocked {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #764ba2;
+        }
+
+        .achievement-card.locked {
+            opacity: 0.6;
+            background: #e0e0e0;
+        }
+
+        .achievement-icon {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .achievement-name {
+            font-weight: bold;
+            font-size: 0.9em;
+            margin-bottom: 5px;
+        }
+
+        .achievement-desc {
+            font-size: 0.8em;
+            opacity: 0.8;
+        }
+
+        .close-modal {
+            float: right;
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #666;
+        }
+
+        .close-modal:hover {
+            color: #333;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #ddd;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            border-bottom-color: #667eea;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .achievement-stats {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .achievement-stats p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 1100;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .settings-modal h2 {
+            color: #764ba2;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .setting-group {
+            background: var(--bg-secondary);
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border-left: 4px solid #667eea;
+        }
+
+        .setting-group label {
+            display: block;
+            font-weight: bold;
+            color: var(--text-primary);
+            margin-bottom: 8px;
+        }
+
+        .setting-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1em;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+        }
+
+        .setting-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+        }
+
+        .classic-mode-warning {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            color: #856404;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .settings-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .settings-btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .default-btn {
+            background: #667eea;
+            color: white;
+        }
+
+        .default-btn:hover {
+            background: #764ba2;
+        }
+
+        .cancel-btn {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .cancel-btn:hover {
+            background: #d0d0d0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🐍 SNAKE GAME 🐍</h1>
+        
+        <div class="difficulty-selector">
+            <h3>⚙️ Seleziona Difficoltà:</h3>
+            <div class="difficulty-buttons">
+                <button class="difficulty-btn" data-diff="easy" onclick="setDifficulty('easy', this)">🟢 Facile</button>
+                <button class="difficulty-btn active" data-diff="medium" onclick="setDifficulty('medium', this)">🟡 Normale</button>
+                <button class="difficulty-btn" data-diff="hard" onclick="setDifficulty('hard', this)">🔴 Difficile</button>
+                <button class="difficulty-btn" data-diff="extreme" onclick="setDifficulty('extreme', this)">⚫ Estremo</button>
+            </div>
+        </div>
+
+        <div style="margin-top:15px;">
+            <h3>🎮 Seleziona Modalità:</h3>
+            <div class="difficulty-buttons" style="gap:8px;flex-wrap:wrap;">
+                <button class="difficulty-btn active" onclick="setGameMode('classic', this)" style="flex:1;min-width:80px;">⚔️ Classica</button>
+                <button class="difficulty-btn" onclick="setGameMode('zen', this)" style="flex:1;min-width:80px;">🧘 Zen</button>
+                <button class="difficulty-btn" onclick="setGameMode('survival', this)" style="flex:1;min-width:80px;">⏱️ Survival</button>
+            </div>
+        </div>
+
+        <div id="difficultyDisplay" style="margin-top:10px;color:#555;">Modalità: <span id="difficultyName">🟡 Normale</span></div>
+        <div id="gameModeDisplay" style="margin-top:8px;color:#555;display:none;">Tipo: <span id="gameModeName">Classica</span></div>
+        <div id="survivalTimeDisplay" style="margin-top:8px;color:#ff6b6b;display:none;font-weight:bold;">⏱️ Tempo: <span id="survivalTimerText">60s</span></div>
+        
+        <div class="info">
+            <div class="score-box"><span id="scoreLabel">Score:</span> <span id="score">0</span></div>
+            <div class="level-box"><span id="levelLabel">Level:</span> <span id="level">1</span></div>
+        </div>
+
+        <canvas id="gameCanvas" width="400" height="400"></canvas>
+        <canvas id="confettiCanvas" width="400" height="400" style="position:absolute;pointer-events:none;z-index:500;border:none;background:transparent;display:none"></canvas>
+
+        <!-- Touch Control Buttons -->
+        <div id="touchControlsContainer" style="display:none;margin-top:15px;text-align:center;">
+            <div style="display:grid;grid-template-columns:repeat(3,60px);gap:10px;justify-content:center;margin-bottom:15px;">
+                <div></div>
+                <button id="touchUpBtn" class="touch-btn" style="background:#667eea;color:white;border:none;width:60px;height:60px;border-radius:50%;font-size:24px;cursor:pointer;font-weight:bold;transition:all 0.2s;" ontouchstart="handleTouchButton('up')" ontouchend="clearTouchButton()">⬆️</button>
+                <div></div>
+                
+                <button id="touchLeftBtn" class="touch-btn" style="background:#667eea;color:white;border:none;width:60px;height:60px;border-radius:50%;font-size:24px;cursor:pointer;font-weight:bold;transition:all 0.2s;" ontouchstart="handleTouchButton('left')" ontouchend="clearTouchButton()">⬅️</button>
+                <button id="touchDownBtn" class="touch-btn" style="background:#667eea;color:white;border:none;width:60px;height:60px;border-radius:50%;font-size:24px;cursor:pointer;font-weight:bold;transition:all 0.2s;" ontouchstart="handleTouchButton('down')" ontouchend="clearTouchButton()">⬇️</button>
+                <button id="touchRightBtn" class="touch-btn" style="background:#667eea;color:white;border:none;width:60px;height:60px;border-radius:50%;font-size:24px;cursor:pointer;font-weight:bold;transition:all 0.2s;" ontouchstart="handleTouchButton('right')" ontouchend="clearTouchButton()">➡️</button>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="startBtn" onclick="startGame()">▶ Inizia Gioco</button>
+            <button onclick="resetGame()">🔄 Ricomincia</button>
+            <button onclick="togglePause()">⏸ Pausa</button>
+            <button onclick="showAchievements()" class="achievements-btn">🏆 Achievement</button>
+            <button onclick="showSettings()" class="achievements-btn">⚙️ Impostazioni</button>
+            <button onclick="showTesterModeModal()" class="achievements-btn" style="background:#f0ad4e;margin-top:5px;font-size:0.8em">🔐 Tester</button>
+            <button onclick="showSaveLoadModal()" class="achievements-btn" style="background:#667eea;margin-top:5px;font-size:0.8em">💾 Salva/Carica</button>
+        </div>
+
+        <div class="instructions">
+            <h3>📋 Istruzioni:</h3>
+            <p>✅ Usa i tasti <strong>freccia</strong> per muoverti</p>
+            <p>✅ Mangia il cibo rosso 🍎 per crescere</p>
+            <p>✅ <strong>Non scontrati con i muri o con te stesso!</strong></p>
+            <p>✅ Più cibo mangi, più veloce diventa il gioco</p>
+            <p>✅ Sblocca achievement raggiungendo i livelli</p>
+            <p id="instructionBlocked">⚠️ Cambiando le impostazioni non classiche, gli achievement non si sbloccheranno finché non ripristini le impostazioni predefinite.</p>
+            <p id="versionText">📝 Made By Noskyn</p>
+        </div>
+    
+    </div>
+
+    <div class="overlay" id="overlay"></div>
+    <div class="game-over" id="gameOver">
+        <h2 id="gameOverTitle">GAME OVER!</h2>
+        <p><span id="finalScoreLabel">Punteggio Finale:</span> <strong id="finalScore">0</strong></p>
+        <p><span id="finalLevelLabel">Livello Raggiunto:</span> <strong id="finalLevel">1</strong></p>
+        <p id="newAchievement" style="color: #667eea; font-weight: bold; margin-top: 15px; display: none;"></p>
+        <button id="retryBtn" onclick="resetGame()" style="margin-top: 20px;">Riprova</button>
+    </div>
+
+    <div class="overlay" id="achievementsOverlay"></div>
+    <div class="achievements-modal" id="achievementsModal">
+        <span class="close-modal" onclick="closeAchievements()">&times;</span>
+        <h2 id="achievementsTitle">🏆 ACHIEVEMENT</h2>
+        
+        <div style="margin:15px 0;display:flex;align-items:center;gap:10px;">
+            <label for="tabDropdown" style="font-weight:bold;">Seleziona Sezione:</label>
+            <select id="tabDropdown" onchange="switchTabFromDropdown(this.value)" style="padding:8px 12px;border:2px solid #667eea;border-radius:5px;background:white;cursor:pointer;font-weight:bold;color:#333;">
+                <option value="stats">📊 Statistiche</option>
+                <option value="daily">📅 Challenge Giornaliere</option>
+                <option value="challenges">🎯 Modalità Sfida</option>
+                <option value="puzzle">🧩 Puzzle</option>
+                <option value="skins">🐍 Skin Serpente</option>
+                <option value="detailedStats">📈 Dati Avanzati</option>
+                <option value="achievements">🎖️ Achievement</option>
+            </select>
+        </div>
+
+        <div id="stats" class="tab-content active">
+            <div class="achievement-stats">
+                <p><strong id="maxScoreLabel">Punteggio Massimo:</strong> <span id="maxScore">0</span></p>
+                <p><strong id="maxLevelLabel">Livello Massimo Raggiunto:</strong> <span id="maxLevel">0</span></p>
+                <p><strong id="achievementCountLabel">Achievement Sbloccati:</strong> <span id="achievementCount">0</span>/21</p>
+                <p><strong id="gamesPlayedLabel">Partite Giocate:</strong> <span id="gamesPlayed">0</span></p>
+            </div>
+        </div>
+
+        <div id="daily" class="tab-content">
+            <div id="dailyChallengesContainer"></div>
+        </div>
+
+        <div id="challenges" class="tab-content">
+            <div id="challengeSelector" style="margin-bottom:20px;"></div>
+            <div id="challengeInfo"></div>
+        </div>
+
+        <div id="puzzle" class="tab-content">
+            <div id="puzzleSelector" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;"></div>
+            <div id="puzzleInfo" style="margin-top:20px;"></div>
+        </div>
+
+        <div id="skins" class="tab-content">
+            <div id="skinsContainer" style="display:grid;grid-template-columns:1fr 1fr;gap:15px;"></div>
+        </div>
+
+        <div id="detailedStats" class="tab-content">
+            <div id="detailedStatsContainer"></div>
+        </div>
+
+        <div id="achievements" class="tab-content">
+            <div class="achievements-grid" id="achievementsGrid"></div>
+        </div>
+    </div>
+
+    <div class="overlay" id="settingsOverlay"></div>
+    <div class="settings-modal" id="settingsModal">
+        <span class="close-modal" onclick="closeSettings()">&times;</span>
+        <h2 id="settingsTitle">⚙️ IMPOSTAZIONI</h2>
+        
+        <div id="classicModeWarning" class="classic-mode-warning" style="display: none;">
+            ⚠️ ATTENZIONE: Non sei in Modalità Classica!<br>
+            Gli Achievement NON verranno sbloccati finché non torni alle impostazioni predefinite.
+        </div>
+
+        <div class="setting-group">
+            <label id="languageLabel">Lingua / Language:</label>
+            <select id="languageSelect" onchange="changeLanguage(this.value)">
+                <option value="it">Italiano</option>
+                <option value="en">English</option>
+            </select>
+        </div>
+
+        <div class="setting-group">
+            <label id="wallCollisionLabel">🔗 Collisione Muri:</label>
+            <div class="checkbox-label">
+                <input type="checkbox" id="wallCollision" checked onchange="updateClassicMode()">
+                <span id="wallCollisionDesc">Perdi se tocchi il muro (Classico)</span>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label id="accelerationLabel">⏱️ Accelerazione (ms per livello):</label>
+            <input type="number" id="accelerationRate" value="8" min="1" max="20" onchange="updateClassicMode()">
+            <small id="accelerationSmall">Valore predefinito: 8 ms</small>
+        </div>
+
+        <div class="setting-group">
+            <label id="minSpeedLabel">🎯 Velocità Minima (ms):</label>
+            <input type="number" id="minSpeed" value="50" min="20" max="100" onchange="updateClassicMode()">
+            <small id="minSpeedSmall">Valore predefinito: 50 ms</small>
+        </div>
+
+        <div class="setting-group">
+            <label id="pointsPerFoodLabel">🍎 Punti per Cibo:</label>
+            <input type="number" id="pointsPerFood" value="10" min="5" max="50" onchange="updateClassicMode()">
+            <small id="pointsPerFoodSmall">Moltiplicato per il livello. Valore predefinito: 10</small>
+        </div>
+
+        <div class="setting-group">
+            <label id="pointsPerLevelLabel">📈 Livelli ogni X punti:</label>
+            <input type="number" id="pointsPerLevel" value="50" min="25" max="100" onchange="updateClassicMode()">
+            <small id="pointsPerLevelSmall">Valore predefinito: 50 punti</small>
+        </div>
+
+        <div class="setting-group">
+            <label id="showGridLabel">Mostra Griglia:</label>
+            <div class="checkbox-label">
+                <input type="checkbox" id="showGrid">
+                <span id="showGridDesc">Mostra/nascondi le linee della griglia</span>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label id="soundLabel">Suoni:</label>
+            <div class="checkbox-label">
+                <input type="checkbox" id="enableSound" checked>
+                <span id="soundDesc">Abilita suoni per eventi (mangia, game over)</span>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label id="darkModeLabel">🌙 Dark Mode:</label>
+            <div class="checkbox-label">
+                <input type="checkbox" id="enableDarkMode">
+                <span id="darkModeDesc">Abilita tema scuro</span>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label id="controlsLabel">⌨️ Controlli:</label>
+            <div style="display:flex;gap:10px;margin-top:8px;">
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+                    <input type="radio" name="controlType" value="arrows" onchange="updateClassicMode()">
+                    <span id="controlsArrows">Frecce</span>
+                </label>
+                <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+                    <input type="radio" name="controlType" value="wasd" onchange="updateClassicMode()">
+                    <span id="controlsWASD">Tasti WASD</span>
+                </label>
+            </div>
+        </div>
+
+        <div class="setting-group">
+            <label id="touchControlsLabel">📱 Controlli Touch:</label>
+            <div class="checkbox-label">
+                <input type="checkbox" id="enableTouchControls">
+                <span id="touchControlsDesc">Abilita controlli touch per dispositivi mobili</span>
+            </div>
+        </div>
+
+        <div id="testerSection" style="display:none;">
+            <div class="setting-group" style="background:#fff3cd;border-color:#ffc107">
+                <h4 style="color:#856404;margin-bottom:10px">🔧 Tester Tools</h4>
+                <button onclick="unlockAllAchievements()" style="width:100%;background:#ffc107;color:#333;border:none;padding:10px;border-radius:5px;cursor:pointer;font-weight:bold;margin-bottom:8px;">Sblocca Tutti gli Achievement</button>
+                <button onclick="resetAllAchievements()" style="width:100%;background:#ff6b6b;color:white;border:none;padding:10px;border-radius:5px;cursor:pointer;font-weight:bold;margin-bottom:8px;">Resetta Tutti gli Achievement</button>
+                <button onclick="clearLocalStorage()" style="width:100%;background:#dc3545;color:white;border:none;padding:10px;border-radius:5px;cursor:pointer;font-weight:bold;">Cancella Tutti i Dati</button>
+            </div>
+        </div>
+
+        <div style="text-align:center;padding:15px;margin-top:10px;border-top:1px solid #ddd;color:#999;font-size:0.9em;">
+            <p id="versionText">🐍 Snake Game v1.0.0🐍</p>
+        <p id="versionText">🐍 Made By Noskyn🐍</p>
+        </div>
+
+        <div class="settings-buttons">
+            <button id="defaultSettingsBtn" class="settings-btn default-btn" onclick="loadDefaultSettings()">🔄 Impostazioni Predefinite</button>
+            <button id="closeSettingsBtn" class="settings-btn cancel-btn" onclick="closeSettings()">Chiudi</button>
+        </div>
+    </div>
+
+    <!-- Confirmation modal shown when settings change to non-classic -->
+    <div class="overlay" id="settingsConfirmOverlay" style="display:none"></div>
+    <div class="achievements-modal" id="settingsConfirmModal" style="display:none;">
+        <span class="close-modal" onclick="cancelSettingsChange()">&times;</span>
+        <h2 id="settingsConfirmTitle">⚠️ Conferma Modifica</h2>
+        <p id="settingsConfirmMessage">Hai cambiato le impostazioni: gli achievement non saranno più sbloccabili. Confermare?</p>
+        <div style="text-align:center;margin-top:18px;">
+            <button id="confirmSettingsBtn" class="settings-btn default-btn" onclick="confirmSettingsChange()">Conferma</button>
+            <button id="cancelSettingsBtn" class="settings-btn cancel-btn" onclick="cancelSettingsChange()">Annulla</button>
+        </div>
+    </div>
+
+    <!-- Tester Mode PIN Modal -->
+    <div class="overlay" id="testerModeOverlay" style="display:none;z-index:9999"></div>
+    <div class="achievements-modal" id="testerModeModal" style="display:none;z-index:10000">
+        <h2 style="color:#764ba2;margin-bottom:20px">🔐 Tester Mode</h2>
+        <p style="color:#666;margin-bottom:15px">Inserisci il PIN per accedere alla modalità tester:</p>
+        <input type="password" id="testerPinInput" placeholder="PIN" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:5px;font-size:1em;margin-bottom:15px;text-align:center;letter-spacing:2px;">
+        <div style="text-align:center;gap:10px;display:flex;justify-content:center;">
+            <button onclick="verifyTesterPin()" style="background:#667eea;color:white;border:none;padding:10px 20px;border-radius:10px;cursor:pointer;font-weight:bold;">Accedi</button>
+            <button onclick="closeTesterModal()" style="background:#ccc;color:#333;border:none;padding:10px 20px;border-radius:10px;cursor:pointer;font-weight:bold;">Annulla</button>
+        </div>
+    </div>
+
+    <!-- Save/Load Game Modal -->
+    <div class="overlay" id="saveLoadOverlay" style="display:none;z-index:9999"></div>
+    <div class="achievements-modal" id="saveLoadModal" style="display:none;z-index:10000;max-width:500px;">
+        <span class="close-modal" onclick="closeSaveLoadModal()">&times;</span>
+        <h2 style="margin-bottom:20px">💾 Salvataggio Alfanumerico</h2>
+        
+        <!-- Save Section -->
+        <div style="border-bottom:2px solid #ddd;padding-bottom:20px;margin-bottom:20px;">
+            <h3 style="color:#667eea;margin-bottom:10px;">📥 Salva Partita</h3>
+            <p style="color:#666;margin-bottom:10px;font-size:0.9em;">Clicca per generare un codice salvatagggio:</p>
+            <button onclick="generateSaveCode()" style="width:100%;background:#667eea;color:white;border:none;padding:12px;border-radius:5px;cursor:pointer;font-weight:bold;margin-bottom:10px;">🔐 Genera Codice di Salvataggio</button>
+            <div id="saveCodeContainer" style="display:none;background:#f0f0f0;padding:10px;border-radius:5px;margin-bottom:10px;">
+                <p style="color:#666;font-size:0.85em;margin-bottom:5px;">Codice di salvataggio (copia e salva!):</p>
+                <input type="text" id="saveCode" readonly style="width:100%;padding:10px;border:1px solid #ddd;border-radius:3px;font-family:monospace;font-size:0.9em;background:white;margin-bottom:8px;word-break:break-all;">
+                <button onclick="copySaveCode()" style="width:100%;background:#4caf50;color:white;border:none;padding:8px;border-radius:3px;cursor:pointer;font-weight:bold;font-size:0.9em;">📋 Copia Codice</button>
+            </div>
+        </div>
+        
+        <!-- Load Section -->
+        <div style="border-bottom:2px solid #ddd;padding-bottom:20px;margin-bottom:20px;">
+            <h3 style="color:#4caf50;margin-bottom:10px;">📤 Carica Partita</h3>
+            <p style="color:#666;margin-bottom:10px;font-size:0.9em;">Incolla il codice di salvataggio:</p>
+            <textarea id="loadCode" placeholder="Incolla il codice di salvataggio qui..." style="width:100%;height:80px;padding:10px;border:1px solid #ddd;border-radius:5px;font-family:monospace;font-size:0.9em;margin-bottom:10px;box-sizing:border-box;"></textarea>
+            <button onclick="loadSaveCode()" style="width:100%;background:#4caf50;color:white;border:none;padding:12px;border-radius:5px;cursor:pointer;font-weight:bold;">✅ Carica Partita</button>
+        </div>
+        
+        <!-- Reset Section -->
+        <div>
+            <h3 style="color:#ff6b6b;margin-bottom:10px;">🔄 Reset</h3>
+            <p style="color:#666;margin-bottom:10px;font-size:0.9em;">Resetta tutti i dati del gioco (puoi recuperarli con il codice):</p>
+            <button onclick="resetGameData()" style="width:100%;background:#ff6b6b;color:white;border:none;padding:12px;border-radius:5px;cursor:pointer;font-weight:bold;">⚠️ Resetta Tutto</button>
+        </div>
+        
+        <button onclick="closeSaveLoadModal()" style="width:100%;background:#ccc;color:#333;border:none;padding:10px;border-radius:5px;cursor:pointer;font-weight:bold;margin-top:20px;">Chiudi</button>
+    </div>
+
+    <!-- Tester Mode Active Indicator -->
+    <div id="testerModeIndicator" style="display:none;position:fixed;top:10px;right:10px;background:#ffc107;color:#333;padding:10px 15px;border-radius:10px;font-weight:bold;z-index:9998;box-shadow:0 2px 10px rgba(0,0,0,0.2)">
+        🔧 TESTER MODE ATTIVA 
+        <button onclick="exitTesterMode()" style="background:#ff6b6b;color:white;border:none;padding:5px 10px;border-radius:5px;cursor:pointer;margin-left:10px;font-weight:bold;font-size:0.8em">Esci</button>
+    </div>
+
+    <script>
+        // Game Version
+        const gameVersion = '1.0.0';
+        
+        // Tester Mode
+        let isTesterMode = false;
+
+        function showTesterModeModal() {
+            document.getElementById('testerModeOverlay').style.display = 'block';
+            document.getElementById('testerModeModal').style.display = 'block';
+            document.getElementById('testerPinInput').focus();
+        }
+
+        function closeTesterModal() {
+            document.getElementById('testerModeOverlay').style.display = 'none';
+            document.getElementById('testerModeModal').style.display = 'none';
+            document.getElementById('testerPinInput').value = '';
+        }
+
+        function verifyTesterPin() {
+            const pin = document.getElementById('testerPinInput').value;
+            if (pin === '4468') {
+                isTesterMode = true;
+                closeTesterModal();
+                showTesterModeUI();
+                alert('✅ Tester Mode attivata! In questa modalità:\n- Non puoi perdere (game over disabilitato)\n- Gli achievement sbloccati NON vengono salvati\n- Puoi testare tutti gli achievement');
+            } else {
+                alert('❌ PIN non valido');
+                document.getElementById('testerPinInput').value = '';
+                document.getElementById('testerPinInput').focus();
+            }
+        }
+
+        function showTesterModeUI() {
+            // Show tester indicator
+            document.getElementById('testerModeIndicator').style.display = 'block';
+            // Show tester tools in settings
+            const testerSection = document.getElementById('testerSection');
+            if (testerSection) testerSection.style.display = 'block';
+        }
+
+        function exitTesterMode() {
+            if (confirm('⚠️ Esci dalla Tester Mode? Gli achievement sbloccati in questa sessione NON verranno salvati.')) {
+                isTesterMode = false;
+                // Reset all achievements to their original state
+                achievements.forEach(ach => ach.unlocked = false);
+                localStorage.setItem('snakeAchievements', JSON.stringify(achievements));
+                document.getElementById('testerModeIndicator').style.display = 'none';
+                const testerSection = document.getElementById('testerSection');
+                if (testerSection) testerSection.style.display = 'none';
+                // Reload to clear tester changes
+                location.reload();
+            }
+        }
+
+        // Global error handler to surface JS errors on the page for debugging
+        window.onerror = function(message, source, lineno, colno, error) {
+            try {
+                const id = 'jsErrorOverlay';
+                let el = document.getElementById(id);
+                if (!el) {
+                    el = document.createElement('div');
+                    el.id = id;
+                    el.style.cssText = 'position:fixed;bottom:10px;left:10px;right:10px;background:#ff4d4f;color:white;padding:10px;border-radius:6px;z-index:20000;font-family:sans-serif;max-height:40vh;overflow:auto;';
+                    document.body.appendChild(el);
+                }
+                const time = new Date().toLocaleTimeString();
+                el.innerHTML = `<strong>JS Error</strong> (${time})<br/>${message} at ${source}:${lineno}:${colno}` + (error && error.stack ? `<pre style="white-space:pre-wrap;color:#fff">${error.stack}</pre>` : '');
+            } catch (e) {
+                // ignore
+            }
+            return false;
+        };
+        // Achievement System
+        let achievements = [
+            { id: 'first_level', name: { it: 'Primi Passi', en: 'First Steps' }, icon: '👶', desc: { it: 'Raggiungi il Livello 2', en: 'Reach Level 2' }, level: 2, unlocked: false },
+            { id: 'level_five', name: { it: 'Esperto', en: 'Skilled' }, icon: '🎮', desc: { it: 'Raggiungi il Livello 5', en: 'Reach Level 5' }, level: 5, unlocked: false },
+            { id: 'level_ten', name: { it: 'Maestro', en: 'Master' }, icon: '👑', desc: { it: 'Raggiungi il Livello 10', en: 'Reach Level 10' }, level: 10, unlocked: false },
+            { id: 'level_twenty', name: { it: 'Dio del Serpente', en: 'Snake God' }, icon: '🐉', desc: { it: 'Raggiungi il Livello 20', en: 'Reach Level 20' }, level: 20, unlocked: false },
+            { id: 'score_hundred', name: { it: 'Centurione', en: 'Centurion' }, icon: '💯', desc: { it: 'Raggiungi 100 punti', en: 'Reach 100 points' }, score: 100, unlocked: false },
+            { id: 'score_thousand', name: { it: 'Millenario', en: 'Millennial' }, icon: '🚀', desc: { it: 'Raggiungi 1000 punti', en: 'Reach 1000 points' }, score: 1000, unlocked: false },
+            { id: 'perfect_game', name: { it: 'Partita Perfetta', en: 'Perfect Game' }, icon: '✨', desc: { it: 'Raggiungi il Livello 15', en: 'Reach Level 15' }, level: 15, unlocked: false },
+            { id: 'speedrun', name: { it: 'Velocista', en: 'Speedster' }, icon: '⚡', desc: { it: 'Raggiungi il Livello 8', en: 'Reach Level 8' }, level: 8, unlocked: false },
+            // Difficulty-specific achievements: reach level 3 on that difficulty
+            { id: 'beat_easy', name: { it: 'Facile Vincente', en: 'Easy Winner' }, icon: '🟢', desc: { it: 'Raggiungi il Livello 3 in Facile', en: 'Reach Level 3 on Easy' }, level: 3, diff: 'easy', unlocked: false },
+            { id: 'beat_medium', name: { it: 'Normale Vincente', en: 'Normal Winner' }, icon: '🟡', desc: { it: 'Raggiungi il Livello 3 in Normale', en: 'Reach Level 3 on Normal' }, level: 3, diff: 'medium', unlocked: false },
+            { id: 'beat_hard', name: { it: 'Difficile Vincente', en: 'Hard Winner' }, icon: '🔴', desc: { it: 'Raggiungi il Livello 3 in Difficile', en: 'Reach Level 3 on Hard' }, level: 3, diff: 'hard', unlocked: false },
+            { id: 'beat_extreme', name: { it: 'Estremo Vincente', en: 'Extreme Winner' }, icon: '⚫', desc: { it: 'Raggiungi il Livello 3 in Estremo', en: 'Reach Level 3 on Extreme' }, level: 3, diff: 'extreme', unlocked: false },
+            // PUZZLE MODE achievements
+            { id: 'puzzle_starter', name: { it: 'Puzzle Principiante', en: 'Puzzle Starter' }, icon: '🧩', desc: { it: 'Completa il primo puzzle', en: 'Complete first puzzle' }, type: 'puzzle', unlocked: false },
+            { id: 'puzzle_master', name: { it: 'Maestro dei Puzzle', en: 'Puzzle Master' }, icon: '🧩✨', desc: { it: 'Completa tutti i puzzle', en: 'Complete all puzzles' }, type: 'puzzle', unlocked: false },
+            { id: 'puzzle_speedrun', name: { it: 'Puzzle Veloce', en: 'Puzzle Speedrun' }, icon: '⚡🧩', desc: { it: 'Completa un puzzle in meno di 30 secondi', en: 'Complete puzzle in under 30 seconds' }, type: 'puzzle', unlocked: false },
+            // SURVIVAL MODE achievements
+            { id: 'survival_first', name: { it: 'Primo Sopravvissuto', en: 'First Survivor' }, icon: '⏱️', desc: { it: 'Sopravvivi 60 secondi in Survival', en: 'Survive 60 seconds in Survival' }, type: 'survival', unlocked: false },
+            { id: 'survival_duration', name: { it: 'Sopravvivenza Estesa', en: 'Extended Survival' }, icon: '⏱️⏱️', desc: { it: 'Sopravvivi 180 secondi in Survival', en: 'Survive 180 seconds in Survival' }, type: 'survival', unlocked: false },
+            { id: 'survival_master', name: { it: 'Maestro della Sopravvivenza', en: 'Survival Master' }, icon: '👻', desc: { it: 'Raggiungi il Livello 5 in Survival', en: 'Reach Level 5 in Survival' }, type: 'survival', unlocked: false },
+            // SKINS achievements
+            { id: 'skin_collector', name: { it: 'Collezionista di Skin', en: 'Skin Collector' }, icon: '🎨', desc: { it: 'Sblocca 3 skin diverse', en: 'Unlock 3 different skins' }, type: 'skins', unlocked: false },
+            { id: 'skin_enthusiast', name: { it: 'Appassionato di Skin', en: 'Skin Enthusiast' }, icon: '🎨🎨', desc: { it: 'Sblocca 6 skin diverse', en: 'Unlock 6 different skins' }, type: 'skins', unlocked: false },
+            { id: 'skin_legend', name: { it: 'Leggenda delle Skin', en: 'Skin Legend' }, icon: '🎨✨', desc: { it: 'Sblocca tutte le skin', en: 'Unlock all skins' }, type: 'skins', unlocked: false }
+        ];
+
+        const difficultySettings = {
+            easy: {
+                gridSize: 15,
+                initialSpeed: 80,
+                canvasSize: 300,
+                name: { it: '🟢 Facile', en: '🟢 Easy' }
+            },
+            medium: {
+                gridSize: 20,
+                initialSpeed: 120,
+                canvasSize: 400,
+                name: { it: '🟡 Normale', en: '🟡 Normal' }
+            },
+            hard: {
+                gridSize: 25,
+                initialSpeed: 180,
+                canvasSize: 500,
+                name: { it: '🔴 Difficile', en: '🔴 Hard' }
+            },
+            extreme: {
+                gridSize: 30,
+                initialSpeed: 250,
+                canvasSize: 600,
+                name: { it: '⚫ Estremo', en: '⚫ Extreme' }
+            }
+        };
+
+        let currentDifficulty = 'medium';
+        let stats = {
+            maxScore: 0,
+            maxLevel: 0,
+            gamesPlayed: 0,
+            totalPlayTime: 0, // in seconds
+            totalFoodEaten: 0,
+            lastPlayDate: null,
+            sessionCount: 0
+        };
+
+        // Game modes
+        let currentGameMode = 'classic'; // 'classic', 'zen', 'survival', 'challenge', 'puzzle'
+        let zenMode = false;
+        let survivalMode = false;
+        let challengeMode = false;
+        let puzzleMode = false;
+        let currentPuzzleLevel = 0;
+        let puzzleStartTime = null; // Track puzzle start time for speedrun achievement
+        let survivalTime = 60; // seconds
+        let survivalTimeRemaining = 60;
+        let survivalTimeBonus = 15; // bonus time when eating food
+        let survivalStartTime = null; // Track survival mode start time
+
+        // Puzzle mode levels - pre-designed with obstacles
+        let puzzleLevels = [
+            {
+                id: 'puzzle_1',
+                name: { it: 'Primo Passo', en: 'First Step' },
+                difficulty: 'easy',
+                targetScore: 100,
+                obstacles: [[5,5], [5,6], [5,7], [5,8], [5,9]], // wall pattern
+                startPos: { x: 2, y: 2 }
+            },
+            {
+                id: 'puzzle_2',
+                name: { it: 'Corridoio', en: 'Corridor' },
+                difficulty: 'easy',
+                targetScore: 150,
+                obstacles: [[3,5], [3,6], [3,7], [7,3], [7,4], [7,5], [7,6], [7,7]],
+                startPos: { x: 1, y: 5 }
+            },
+            {
+                id: 'puzzle_3',
+                name: { it: 'Labirinto', en: 'Labyrinth' },
+                difficulty: 'medium',
+                targetScore: 250,
+                obstacles: [[4,2], [4,3], [4,4], [4,5], [4,6], [6,2], [6,3], [6,4], [6,5], [6,6], [5,4]],
+                startPos: { x: 1, y: 1 }
+            },
+            {
+                id: 'puzzle_4',
+                name: { it: 'Spirale', en: 'Spiral' },
+                difficulty: 'medium',
+                targetScore: 300,
+                obstacles: [[5,5], [5,4], [5,3], [5,2], [4,2], [3,2], [3,3], [3,4], [3,5], [2,5], [2,4]],
+                startPos: { x: 1, y: 1 }
+            },
+            {
+                id: 'puzzle_5',
+                name: { it: 'Sfida Estrema', en: 'Extreme Challenge' },
+                difficulty: 'hard',
+                targetScore: 500,
+                obstacles: [[5,5], [4,5], [6,5], [5,4], [5,6], [3,3], [7,7], [3,7], [7,3], [5,1], [5,9]],
+                startPos: { x: 1, y: 5 }
+            }
+        ];
+        let puzzleObstacles = [];
+        let puzzleLevelCompleted = [];
+
+        // Snake Skins - Unlock with achievements and daily challenges
+        let snakeSkins = [
+            {
+                id: 'classic_green',
+                name: { it: 'Verde Classico', en: 'Classic Green' },
+                head: '#00ff00',
+                body: '#00cc00',
+                unlocked: true,
+                unlockedBy: 'Default',
+                unlockRequirement: null
+            },
+            {
+                id: 'golden_snake',
+                name: { it: 'Serpente d\'Oro', en: 'Golden Snake' },
+                head: '#FFD700',
+                body: '#FFA500',
+                unlocked: false,
+                unlockedBy: { it: 'Sblocca: Raggiungere livello 10', en: 'Unlock: Reach level 10' },
+                unlockRequirement: 'ach_level_ten'
+            },
+            {
+                id: 'blue_ice',
+                name: { it: 'Ghiaccio Blu', en: 'Blue Ice' },
+                head: '#00FFFF',
+                body: '#0088FF',
+                unlocked: false,
+                unlockedBy: { it: 'Sblocca: Raggiungere livello 15', en: 'Unlock: Reach level 15' },
+                unlockRequirement: 'ach_perfect_game'
+            },
+            {
+                id: 'purple_magic',
+                name: { it: 'Magia Viola', en: 'Purple Magic' },
+                head: '#DD33DD',
+                body: '#9933FF',
+                unlocked: false,
+                unlockedBy: { it: 'Sblocca: Sfida Giornaliera 50 Cibi', en: 'Unlock: Daily Challenge 50 Foods' },
+                unlockRequirement: 'daily_50_food'
+            },
+            {
+                id: 'fire_red',
+                name: { it: 'Fuoco Rosso', en: 'Fire Red' },
+                head: '#FF1111',
+                body: '#FF6666',
+                unlocked: false,
+                unlockedBy: { it: 'Sblocca: Raggiungere 1000 punti', en: 'Unlock: Reach 1000 points' },
+                unlockRequirement: 'ach_score_thousand'
+            },
+            {
+                id: 'neon_pink',
+                name: { it: 'Neon Rosa', en: 'Neon Pink' },
+                head: '#FF00FF',
+                body: '#FF0088',
+                unlocked: false,
+                unlockedBy: { it: 'Sblocca: Sfida Giornaliera Livello 10', en: 'Unlock: Daily Challenge Level 10' },
+                unlockRequirement: 'daily_level_10'
+            },
+            {
+                id: 'shadow_black',
+                name: { it: 'Ombra Nera', en: 'Shadow Black' },
+                head: '#222222',
+                body: '#555555',
+                unlocked: false,
+                unlockedBy: { it: 'Sblocca: Sfida Giornaliera 500 Punti', en: 'Unlock: Daily Challenge 500 Points' },
+                unlockRequirement: 'daily_score_500'
+            },
+            {
+                id: 'rainbow_psycho',
+                name: { it: 'Arcobaleno Pazzo', en: 'Rainbow Psycho' },
+                head: '#FF00FF',
+                body: '#00FFFF',
+                unlocked: false,
+                unlockedBy: { it: 'Sblocca: Tutte le Sfide Giornaliere', en: 'Unlock: All Daily Challenges' },
+                unlockRequirement: 'all_dailies'
+            }
+        ];
+        let currentSnakeSkin = 'classic_green';
+
+        // Daily challenges
+        let dailyChallenges = [
+            { id: 'daily_50_food', name: { it: 'Ghiotto', en: 'Foodie' }, icon: '🍎', desc: { it: 'Mangia 50 cibi', en: 'Eat 50 foods' }, target: 50, progress: 0, completed: false, reward: 100 },
+            { id: 'daily_level_10', name: { it: 'Ascesa', en: 'Rise' }, icon: '📈', desc: { it: 'Raggiungi livello 10', en: 'Reach level 10' }, target: 10, progress: 0, completed: false, reward: 150 },
+            { id: 'daily_score_500', name: { it: 'Centinaia', en: 'Hundreds' }, icon: '💯', desc: { it: 'Raggiungi 500 punti', en: 'Reach 500 points' }, target: 500, progress: 0, completed: false, reward: 200 }
+        ];
+        let lastChallengeResetDate = localStorage.getItem('lastChallengeResetDate') || new Date().toDateString();
+
+        // Custom challenges to create
+        let customChallenges = [
+            { id: 'challenge_level_3', name: { it: 'Sfida Livello 3', en: 'Level 3 Challenge' }, icon: '🎯', desc: { it: 'Raggiungi il livello 3', en: 'Reach level 3' }, type: 'level', target: 3 },
+            { id: 'challenge_score_1000', name: { it: 'Sfida 1000 Punti', en: '1000 Points Challenge' }, icon: '🚀', desc: { it: 'Raggiungi 1000 punti', en: 'Reach 1000 points' }, type: 'score', target: 1000 },
+            { id: 'challenge_200_food', name: { it: 'Sfida Maratona', en: 'Marathon Challenge' }, icon: '⭐', desc: { it: 'Mangia 200 cibi', en: 'Eat 200 foods' }, type: 'food', target: 200 }
+        ];
+        let selectedChallenge = null;
+
+        // Track achievements unlocked during the current game/session
+        let newlyUnlockedThisSession = [];
+
+        // Custom Settings
+        let customSettings = {
+            wallCollision: true,
+            accelerationRate: 8,
+            minSpeed: 50,
+            pointsPerFood: 10,
+            pointsPerLevel: 50,
+            language: 'it',
+            showGrid: false,
+            enableSound: true,
+            darkMode: false,
+            controlType: 'arrows',
+            enableTouchControls: true
+        };
+
+        let currentLang = 'it';
+
+        const translations = {
+            it: {
+                start: '▶ Inizia Gioco',
+                restart: '🔄 Ricomincia',
+                pause: '⏸ Pausa',
+                achievement: '🏆 Achievement',
+                settings: '⚙️ Impostazioni',
+                instructionsTitle: '📋 Istruzioni:',
+                instr1: '✅ Usa i tasti freccia per muoverti',
+                instr2: '✅ Mangia il cibo rosso 🍎 per crescere',
+                instr3: '✅ Non scontrarti con i muri o con te stesso!',
+                instr4: '✅ Più cibo mangi, più veloce diventa il gioco',
+                instr5: '✅ Sblocca achievement raggiungendo i livelli',
+                    instrBlocked: '⚠️ Cambiando le impostazioni non classiche, gli achievement non si sbloccheranno finché non ripristini le impostazioni predefinite.',
+                settingsTitle: '⚙️ IMPOSTAZIONI',
+                classicWarning: '⚠️ ATTENZIONE: Non sei in Modalità Classica!\nGli Achievement NON verranno sbloccati finché non torni alle impostazioni predefinite.',
+                wallCollisionLabel: '🔗 Collisione Muri:',
+                wallCollisionDesc: 'Perdi se tocchi il muro (Classico)',
+                accelerationLabel: '⏱️ Accelerazione (ms per livello):',
+                accelerationSmall: 'Valore predefinito: 8 ms',
+                minSpeedLabel: '🎯 Velocità Minima (ms):',
+                minSpeedSmall: 'Valore predefinito: 50 ms',
+                pointsPerFoodLabel: '🍎 Punti per Cibo:',
+                pointsPerFoodSmall: 'Moltiplicato per il livello. Valore predefinito: 10',
+                pointsPerLevelLabel: '📈 Livelli ogni X punti:',
+                pointsPerLevelSmall: 'Valore predefinito: 50 punti',
+                defaultSettings: '🔄 Impostazioni Predefinite',
+                showGridLabel: 'Mostra Griglia:',
+                showGridDesc: 'Mostra/nascondi le linee della griglia',
+                soundLabel: 'Suoni:',
+                soundDesc: 'Abilita suoni per eventi (mangia, game over)',
+                darkModeLabel: '🌙 Dark Mode:',
+                darkModeDesc: 'Abilita tema scuro',
+                controlsLabel: '⌨️ Controlli:',
+                controlsArrows: 'Frecce',
+                controlsWASD: 'Tasti WASD',
+                touchControlsLabel: '📱 Controlli Touch:',
+                touchControlsDesc: 'Abilita controlli touch per dispositivi mobili',
+                close: 'Chiudi',
+                confirmTitle: '⚠️ Conferma Modifica',
+                confirmMessage: 'Hai cambiato le impostazioni: gli achievement non saranno più sbloccabili. Confermare?',
+                confirmBtn: 'Conferma',
+                cancelBtn: 'Annulla'
+            },
+            en: {
+                start: '▶ Start Game',
+                restart: '🔄 Restart',
+                pause: '⏸ Pause',
+                achievement: '🏆 Achievements',
+                settings: '⚙️ Settings',
+                instructionsTitle: '📋 Instructions:',
+                instr1: '✅ Use the arrow keys to move',
+                instr2: '✅ Eat the red food 🍎 to grow',
+                instr3: '✅ Avoid hitting walls or yourself!',
+                instr4: '✅ The game speeds up as you eat',
+                instr5: '✅ Unlock achievements by reaching levels',
+                    instrBlocked: '⚠️ If you change settings (non-classic), achievements will NOT unlock until you restore default settings.',
+                settingsTitle: '⚙️ SETTINGS',
+                classicWarning: '⚠️ WARNING: You are not in Classic Mode!\nAchievements will NOT unlock until you restore default settings.'
+                ,
+                wallCollisionLabel: '🔗 Wall Collision:',
+                wallCollisionDesc: 'You lose when hitting a wall (Classic)',
+                accelerationLabel: '⏱️ Acceleration (ms per level):',
+                accelerationSmall: 'Default: 8 ms',
+                minSpeedLabel: '🎯 Minimum Speed (ms):',
+                minSpeedSmall: 'Default: 50 ms',
+                pointsPerFoodLabel: '🍎 Points per Food:',
+                pointsPerFoodSmall: 'Multiplied by level. Default: 10',
+                pointsPerLevelLabel: '📈 Points per Level:',
+                pointsPerLevelSmall: 'Default: 50 points',
+                showGridLabel: 'Show Grid:',
+                showGridDesc: 'Toggle grid lines',
+                soundLabel: 'Sound:',
+                soundDesc: 'Enable sounds for events (eat, game over)',
+                darkModeLabel: '🌙 Dark Mode:',
+                darkModeDesc: 'Enable dark theme',
+                controlsLabel: '⌨️ Controls:',
+                controlsArrows: 'Arrow Keys',
+                controlsWASD: 'WASD Keys',
+                touchControlsLabel: '📱 Touch Controls:',
+                touchControlsDesc: 'Enable touch controls for mobile devices',
+                defaultSettings: '🔄 Default Settings',
+                close: 'Close',
+                confirmTitle: '⚠️ Confirm Change',
+                confirmMessage: 'You changed settings: achievements will NOT unlock. Confirm changes?',
+                confirmBtn: 'Confirm',
+                cancelBtn: 'Cancel'
+            }
+        };
+
+        let isClassicMode = true;
+
+        function loadStats() {
+            const saved = localStorage.getItem('snakeStats');
+            if (saved) {
+                stats = JSON.parse(saved);
+            }
+            const savedAchievements = localStorage.getItem('snakeAchievements');
+            if (savedAchievements) {
+                const saved_ach = JSON.parse(savedAchievements);
+                achievements.forEach((ach, i) => {
+                    if (saved_ach[i]) {
+                        ach.unlocked = saved_ach[i].unlocked;
+                    }
+                });
+            }
+            const savedDailyChallenges = localStorage.getItem('snakeDailyChallenges');
+            if (savedDailyChallenges) {
+                const saved_dc = JSON.parse(savedDailyChallenges);
+                dailyChallenges.forEach((dc, i) => {
+                    if (saved_dc[i]) {
+                        dc.progress = saved_dc[i].progress;
+                        dc.completed = saved_dc[i].completed;
+                    }
+                });
+            }
+            const savedPuzzleProgress = localStorage.getItem('snakePuzzleProgress');
+            if (savedPuzzleProgress) {
+                puzzleLevelCompleted = JSON.parse(savedPuzzleProgress);
+            } else {
+                puzzleLevelCompleted = puzzleLevels.map(() => false);
+            }
+            const savedSettings = localStorage.getItem('snakeSettings');
+            if (savedSettings) {
+                customSettings = JSON.parse(savedSettings);
+                updateSettingsUI();
+                currentLang = customSettings.language || 'it';
+                applyLanguage();
+                applyDarkMode(customSettings.darkMode || false);
+                updateClassicMode();
+            }
+            
+            // Load current skin and check unlocks
+            const savedSkin = localStorage.getItem('snakeCurrentSkin');
+            if (savedSkin) {
+                currentSnakeSkin = savedSkin;
+            }
+            checkSkinUnlocks();
+        }
+
+        function applyDarkMode(enabled) {
+            if (enabled) {
+                document.body.classList.add('dark-mode');
+            } else {
+                document.body.classList.remove('dark-mode');
+            }
+        }
+
+        function saveStats() {
+            localStorage.setItem('snakeStats', JSON.stringify(stats));
+            localStorage.setItem('snakeAchievements', JSON.stringify(achievements));
+            localStorage.setItem('snakeSettings', JSON.stringify(customSettings));
+            localStorage.setItem('snakeDailyChallenges', JSON.stringify(dailyChallenges));
+            localStorage.setItem('snakePuzzleProgress', JSON.stringify(puzzleLevelCompleted));
+        }
+
+        function updateSettingsUI() {
+            document.getElementById('wallCollision').checked = customSettings.wallCollision;
+            document.getElementById('accelerationRate').value = customSettings.accelerationRate;
+            document.getElementById('minSpeed').value = customSettings.minSpeed;
+            document.getElementById('pointsPerFood').value = customSettings.pointsPerFood;
+            document.getElementById('pointsPerLevel').value = customSettings.pointsPerLevel;
+            if (document.getElementById('showGrid')) document.getElementById('showGrid').checked = !!customSettings.showGrid;
+            if (document.getElementById('enableSound')) document.getElementById('enableSound').checked = !!customSettings.enableSound;
+            if (document.getElementById('enableDarkMode')) document.getElementById('enableDarkMode').checked = !!customSettings.darkMode;
+            if (document.getElementById('enableTouchControls')) document.getElementById('enableTouchControls').checked = !!customSettings.enableTouchControls;
+            if (document.getElementById('languageSelect')) {
+                document.getElementById('languageSelect').value = customSettings.language || 'it';
+            }
+            // Set control type radio button
+            const controlType = customSettings.controlType || 'arrows';
+            const radioButtons = document.querySelectorAll('input[name="controlType"]');
+            radioButtons.forEach(radio => {
+                radio.checked = radio.value === controlType;
+            });
+            // update difficulty display
+            const name = difficultySettings[currentDifficulty].name[currentLang] || difficultySettings[currentDifficulty].name.it;
+            if (document.getElementById('difficultyName')) document.getElementById('difficultyName').textContent = name;
+        }
+
+        function changeLanguage(lang) {
+            currentLang = lang;
+            customSettings.language = lang;
+            applyLanguage();
+            saveStats();
+        }
+
+
+        function applyLanguage() {
+            const t = translations[currentLang] || translations.it;
+            // Buttons
+            if (document.getElementById('startBtn')) document.getElementById('startBtn').textContent = t.start;
+            const controls = document.querySelectorAll('.controls button');
+            // update specific buttons by order: start, restart, pause, achievements, settings
+            if (controls && controls.length >= 5) {
+                controls[0].textContent = t.start;
+                controls[1].textContent = t.restart;
+                controls[2].textContent = t.pause;
+                controls[3].textContent = t.achievement;
+                controls[4].textContent = t.settings;
+            }
+            // Instructions
+            const instrTitle = document.querySelector('.instructions h3');
+            if (instrTitle) instrTitle.textContent = t.instructionsTitle;
+            const instrParas = document.querySelectorAll('.instructions p');
+            if (instrParas && instrParas.length >= 5) {
+                instrParas[0].textContent = t.instr1;
+                instrParas[1].textContent = t.instr2;
+                instrParas[2].textContent = t.instr3;
+                instrParas[3].textContent = t.instr4;
+                instrParas[4].textContent = t.instr5;
+            }
+            // instruction blocked message (separato per id)
+            if (document.getElementById('instructionBlocked')) document.getElementById('instructionBlocked').textContent = t.instrBlocked;
+            // Settings title & classic warning
+            if (document.getElementById('settingsTitle')) document.getElementById('settingsTitle').textContent = t.settingsTitle;
+            if (document.getElementById('classicModeWarning')) document.getElementById('classicModeWarning').textContent = t.classicWarning.replace('\n','\n');
+            // Difficulty name
+            const name = difficultySettings[currentDifficulty].name[currentLang] || difficultySettings[currentDifficulty].name.it;
+            if (document.getElementById('difficultyName')) document.getElementById('difficultyName').textContent = name;
+            // Update difficulty buttons labels
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                const diff = btn.dataset.diff;
+                if (diff && difficultySettings[diff]) {
+                    btn.textContent = difficultySettings[diff].name[currentLang] || difficultySettings[diff].name.it;
+                }
+            });
+            // Language label
+            if (document.getElementById('languageLabel')) document.getElementById('languageLabel').textContent = currentLang === 'it' ? 'Lingua / Language:' : 'Language / Lingua:';
+            // Achievement modal texts
+            if (document.getElementById('achievementsTitle')) document.getElementById('achievementsTitle').textContent = currentLang === 'it' ? '🏆 ACHIEVEMENT' : '🏆 ACHIEVEMENTS';
+            if (document.getElementById('statsTab')) document.getElementById('statsTab').textContent = currentLang === 'it' ? '📊 Statistiche' : '📊 Stats';
+            if (document.getElementById('achievementsTab')) document.getElementById('achievementsTab').textContent = currentLang === 'it' ? '🎖️ Achievement' : '🎖️ Achievements';
+            if (document.getElementById('maxScoreLabel')) document.getElementById('maxScoreLabel').textContent = currentLang === 'it' ? 'Punteggio Massimo:' : 'Max Score:';
+            if (document.getElementById('maxLevelLabel')) document.getElementById('maxLevelLabel').textContent = currentLang === 'it' ? 'Livello Massimo Raggiunto:' : 'Max Level Reached:';
+            if (document.getElementById('achievementCountLabel')) document.getElementById('achievementCountLabel').textContent = currentLang === 'it' ? 'Achievement Sbloccati:' : 'Achievements Unlocked:';
+            if (document.getElementById('gamesPlayedLabel')) document.getElementById('gamesPlayedLabel').textContent = currentLang === 'it' ? 'Partite Giocate:' : 'Games Played:';
+            // Game over / retry
+            if (document.getElementById('gameOverTitle')) document.getElementById('gameOverTitle').textContent = currentLang === 'it' ? 'GAME OVER!' : 'GAME OVER!';
+            if (document.getElementById('finalScoreLabel')) document.getElementById('finalScoreLabel').textContent = currentLang === 'it' ? 'Punteggio Finale:' : 'Final Score:';
+            if (document.getElementById('finalLevelLabel')) document.getElementById('finalLevelLabel').textContent = currentLang === 'it' ? 'Livello Raggiunto:' : 'Level Reached:';
+            if (document.getElementById('retryBtn')) document.getElementById('retryBtn').textContent = currentLang === 'it' ? 'Riprova' : 'Retry';
+            // Score/Level labels
+            if (document.getElementById('scoreLabel')) document.getElementById('scoreLabel').textContent = currentLang === 'it' ? 'Score:' : 'Score:';
+            if (document.getElementById('levelLabel')) document.getElementById('levelLabel').textContent = currentLang === 'it' ? 'Level:' : 'Level:';
+            // Settings labels
+            if (document.getElementById('wallCollisionLabel')) document.getElementById('wallCollisionLabel').textContent = t.wallCollisionLabel;
+            if (document.getElementById('wallCollisionDesc')) document.getElementById('wallCollisionDesc').textContent = t.wallCollisionDesc;
+            if (document.getElementById('accelerationLabel')) document.getElementById('accelerationLabel').textContent = t.accelerationLabel;
+            if (document.getElementById('accelerationSmall')) document.getElementById('accelerationSmall').textContent = t.accelerationSmall;
+            if (document.getElementById('minSpeedLabel')) document.getElementById('minSpeedLabel').textContent = t.minSpeedLabel;
+            if (document.getElementById('minSpeedSmall')) document.getElementById('minSpeedSmall').textContent = t.minSpeedSmall;
+            if (document.getElementById('pointsPerFoodLabel')) document.getElementById('pointsPerFoodLabel').textContent = t.pointsPerFoodLabel;
+            if (document.getElementById('pointsPerFoodSmall')) document.getElementById('pointsPerFoodSmall').textContent = t.pointsPerFoodSmall;
+            if (document.getElementById('pointsPerLevelLabel')) document.getElementById('pointsPerLevelLabel').textContent = t.pointsPerLevelLabel;
+            if (document.getElementById('pointsPerLevelSmall')) document.getElementById('pointsPerLevelSmall').textContent = t.pointsPerLevelSmall;
+            if (document.getElementById('showGridLabel')) document.getElementById('showGridLabel').textContent = currentLang === 'it' ? 'Mostra Griglia:' : t.showGridLabel;
+            if (document.getElementById('showGridDesc')) document.getElementById('showGridDesc').textContent = currentLang === 'it' ? 'Mostra/nascondi le linee della griglia' : t.showGridDesc;
+            if (document.getElementById('soundLabel')) document.getElementById('soundLabel').textContent = currentLang === 'it' ? 'Suoni:' : t.soundLabel;
+            if (document.getElementById('soundDesc')) document.getElementById('soundDesc').textContent = currentLang === 'it' ? 'Abilita suoni per eventi (mangia, game over)' : t.soundDesc;
+            if (document.getElementById('darkModeLabel')) document.getElementById('darkModeLabel').textContent = currentLang === 'it' ? '🌙 Dark Mode:' : t.darkModeLabel;
+            if (document.getElementById('darkModeDesc')) document.getElementById('darkModeDesc').textContent = currentLang === 'it' ? 'Abilita tema scuro' : t.darkModeDesc;
+            if (document.getElementById('defaultSettingsBtn')) document.getElementById('defaultSettingsBtn').textContent = t.defaultSettings;
+            if (document.getElementById('closeSettingsBtn')) document.getElementById('closeSettingsBtn').textContent = t.close;
+            // Confirm modal translations
+            if (document.getElementById('settingsConfirmTitle')) document.getElementById('settingsConfirmTitle').textContent = t.confirmTitle;
+            if (document.getElementById('settingsConfirmMessage')) document.getElementById('settingsConfirmMessage').textContent = t.confirmMessage;
+            if (document.getElementById('confirmSettingsBtn')) document.getElementById('confirmSettingsBtn').textContent = t.confirmBtn;
+            if (document.getElementById('cancelSettingsBtn')) document.getElementById('cancelSettingsBtn').textContent = t.cancelBtn;
+        }
+
+        function updateClassicMode() {
+            // Read current input values (if available) to determine if settings are default
+            const wall = document.getElementById('wallCollision') ? document.getElementById('wallCollision').checked : customSettings.wallCollision;
+            const acc = document.getElementById('accelerationRate') ? parseInt(document.getElementById('accelerationRate').value) : customSettings.accelerationRate;
+            const minS = document.getElementById('minSpeed') ? parseInt(document.getElementById('minSpeed').value) : customSettings.minSpeed;
+            const ppf = document.getElementById('pointsPerFood') ? parseInt(document.getElementById('pointsPerFood').value) : customSettings.pointsPerFood;
+            const ppl = document.getElementById('pointsPerLevel') ? parseInt(document.getElementById('pointsPerLevel').value) : customSettings.pointsPerLevel;
+
+            const isDefault = wall === true && acc === 8 && minS === 50 && ppf === 10 && ppl === 50;
+
+            isClassicMode = isDefault;
+            document.getElementById('classicModeWarning').style.display = isDefault ? 'none' : 'block';
+
+            // If settings are now non-default and we haven't asked for confirmation yet, show confirm modal
+            if (!isDefault && !window._settingsChangeWarned) {
+                window._settingsChangeWarned = true;
+                // save previous settings snapshot so we can revert
+                if (!window.previousSettings) window.previousSettings = JSON.parse(JSON.stringify(customSettings));
+                showSettingsConfirmModal();
+            }
+            if (isDefault) {
+                window._settingsChangeWarned = false;
+                window.previousSettings = null;
+            }
+        }
+
+        function showSettings() {
+            document.getElementById('settingsOverlay').style.display = 'block';
+            document.getElementById('settingsModal').style.display = 'block';
+            updateSettingsUI();
+            // snapshot current settings so we can revert if user cancels
+            window.previousSettings = JSON.parse(JSON.stringify(customSettings));
+            window._settingsChangeWarned = false;
+            window._settingsConfirmedNonClassic = false;
+        }
+
+        function closeSettings() {
+            // Save custom settings
+            customSettings.wallCollision = document.getElementById('wallCollision').checked;
+            customSettings.accelerationRate = parseInt(document.getElementById('accelerationRate').value);
+            customSettings.minSpeed = parseInt(document.getElementById('minSpeed').value);
+            customSettings.pointsPerFood = parseInt(document.getElementById('pointsPerFood').value);
+            customSettings.pointsPerLevel = parseInt(document.getElementById('pointsPerLevel').value);
+            if (document.getElementById('showGrid')) customSettings.showGrid = document.getElementById('showGrid').checked;
+            if (document.getElementById('enableSound')) customSettings.enableSound = document.getElementById('enableSound').checked;
+            if (document.getElementById('enableDarkMode')) {
+                const newDarkMode = document.getElementById('enableDarkMode').checked;
+                customSettings.darkMode = newDarkMode;
+                applyDarkMode(newDarkMode);
+            }
+            // Save control type
+            const selectedControl = document.querySelector('input[name="controlType"]:checked');
+            if (selectedControl) {
+                customSettings.controlType = selectedControl.value;
+            }
+            // Save touch controls setting
+            if (document.getElementById('enableTouchControls')) {
+                customSettings.enableTouchControls = document.getElementById('enableTouchControls').checked;
+            }
+            
+            updateClassicMode();
+            saveStats();
+            
+            document.getElementById('settingsOverlay').style.display = 'none';
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function loadDefaultSettings() {
+            customSettings = {
+                wallCollision: true,
+                accelerationRate: 8,
+                minSpeed: 50,
+                pointsPerFood: 10,
+                pointsPerLevel: 50,
+                language: 'it',
+                showGrid: false,
+                enableSound: true,
+                darkMode: false,
+                controlType: 'arrows',
+                enableTouchControls: true
+            };
+            updateSettingsUI();
+            applyDarkMode(false);
+            updateClassicMode();
+            saveStats();
+        }
+
+        function showSettingsConfirmModal() {
+            if (!window.previousSettings) window.previousSettings = JSON.parse(JSON.stringify(customSettings));
+            document.getElementById('settingsConfirmOverlay').style.display = 'block';
+            document.getElementById('settingsConfirmModal').style.display = 'block';
+            // localize text
+            const t = translations[currentLang] || translations.it;
+            if (document.getElementById('settingsConfirmTitle')) document.getElementById('settingsConfirmTitle').textContent = currentLang === 'it' ? '⚠️ Conferma Modifica' : '⚠️ Confirm Change';
+            if (document.getElementById('settingsConfirmMessage')) document.getElementById('settingsConfirmMessage').textContent = currentLang === 'it' ? 'Hai cambiato le impostazioni: gli achievement non saranno più sbloccabili. Confermare?' : 'You changed settings: achievements will NOT unlock. Confirm changes?';
+            if (document.getElementById('confirmSettingsBtn')) document.getElementById('confirmSettingsBtn').textContent = currentLang === 'it' ? 'Conferma' : 'Confirm';
+            if (document.getElementById('cancelSettingsBtn')) document.getElementById('cancelSettingsBtn').textContent = currentLang === 'it' ? 'Annulla' : 'Cancel';
+        }
+
+        function closeSettingsConfirmModal() {
+            document.getElementById('settingsConfirmOverlay').style.display = 'none';
+            document.getElementById('settingsConfirmModal').style.display = 'none';
+        }
+
+        function confirmSettingsChange() {
+            // apply current input values to customSettings and keep changes
+            customSettings.wallCollision = document.getElementById('wallCollision').checked;
+            customSettings.accelerationRate = parseInt(document.getElementById('accelerationRate').value);
+            customSettings.minSpeed = parseInt(document.getElementById('minSpeed').value);
+            customSettings.pointsPerFood = parseInt(document.getElementById('pointsPerFood').value);
+            customSettings.pointsPerLevel = parseInt(document.getElementById('pointsPerLevel').value);
+            // mark as confirmed non-classic so achievements remain blocked
+            window._settingsConfirmedNonClassic = true;
+            isClassicMode = false;
+            saveStats();
+            closeSettingsConfirmModal();
+        }
+
+        function cancelSettingsChange() {
+            // revert inputs to previousSettings
+            if (window.previousSettings) {
+                customSettings = JSON.parse(JSON.stringify(window.previousSettings));
+            }
+            updateSettingsUI();
+            updateClassicMode();
+            closeSettingsConfirmModal();
+            window._settingsChangeWarned = false;
+        }
+
+        function setDifficulty(difficulty, btnEl) {
+            if (gameRunning) return;
+            currentDifficulty = difficulty;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('active'));
+            if (btnEl && btnEl.classList) btnEl.classList.add('active');
+            
+            const settings = difficultySettings[difficulty];
+            canvas.width = settings.canvasSize;
+            canvas.height = settings.canvasSize;
+            gridSize = settings.gridSize;
+            tileCount = canvas.width / gridSize;
+            gameLoopSpeed = settings.initialSpeed;
+            // resize confetti overlay to match canvas
+            try { setConfettiSize(); } catch (e) {}
+            // update difficulty name display
+            const name = settings.name[currentLang] || settings.name.it;
+            if (document.getElementById('difficultyName')) document.getElementById('difficultyName').textContent = name;
+            resetGame();
+        }
+
+        function setGameMode(mode, btnEl) {
+            if (gameRunning) return;
+            currentGameMode = mode;
+            zenMode = (mode === 'zen');
+            survivalMode = (mode === 'survival');
+            challengeMode = (mode === 'challenge');
+            puzzleMode = (mode === 'puzzle');
+
+            // Update button styling (find all game mode buttons, not difficulty buttons)
+            const allButtons = document.querySelectorAll('button');
+            allButtons.forEach(btn => {
+                if (btn.textContent.includes('⚔️') || btn.textContent.includes('🧘') || btn.textContent.includes('⏱️')) {
+                    btn.classList.remove('active');
+                }
+            });
+            if (btnEl && btnEl.classList) btnEl.classList.add('active');
+
+            // Update display text
+            const modeNames = {
+                'classic': currentLang === 'it' ? 'Classica' : 'Classic',
+                'zen': currentLang === 'it' ? 'Zen (Niente Game Over)' : 'Zen (No Game Over)',
+                'survival': currentLang === 'it' ? 'Survival (Tempo)' : 'Survival (Time)',
+                'challenge': currentLang === 'it' ? 'Sfida' : 'Challenge',
+                'puzzle': currentLang === 'it' ? 'Puzzle' : 'Puzzle'
+            };
+            
+            if (document.getElementById('gameModeDisplay')) {
+                if (mode === 'classic') {
+                    document.getElementById('gameModeDisplay').style.display = 'none';
+                } else {
+                    document.getElementById('gameModeDisplay').style.display = 'block';
+                    document.getElementById('gameModeName').textContent = modeNames[mode] || mode;
+                }
+            }
+
+            // Reset game
+            resetGame();
+        }
+
+        function checkAchievements() {
+            if (!isClassicMode) return; // Non sbloccare achievement se non in modalità classica
+
+            achievements.forEach(ach => {
+                if (ach.unlocked) return;
+
+                // Difficulty specific achievements: require matching currentDifficulty
+                if (ach.diff) {
+                    if (currentDifficulty !== ach.diff) return;
+                    if (ach.level && level >= ach.level) {
+                        ach.unlocked = true;
+                        newlyUnlockedThisSession.push(ach.id);
+                        showAchievementNotification(ach);
+                    }
+                    return;
+                }
+
+                if (ach.level && level >= ach.level) {
+                    ach.unlocked = true;
+                    newlyUnlockedThisSession.push(ach.id);
+                    showAchievementNotification(ach);
+                } else if (ach.score && score >= ach.score) {
+                    ach.unlocked = true;
+                    newlyUnlockedThisSession.push(ach.id);
+                    showAchievementNotification(ach);
+                }
+            });
+            checkModeAchievements();
+            checkSkinUnlocks();
+            saveStats();
+        }
+
+        function checkModeAchievements() {
+            // Check mode-specific and progression achievements
+            achievements.forEach(ach => {
+                if (ach.unlocked) return;
+                
+                // PUZZLE achievements
+                if (ach.type === 'puzzle') {
+                    if (ach.id === 'puzzle_starter' && puzzleLevelCompleted.some(c => c)) {
+                        ach.unlocked = true;
+                        showAchievementNotification(ach);
+                    } else if (ach.id === 'puzzle_master' && puzzleLevelCompleted.every(c => c)) {
+                        ach.unlocked = true;
+                        showAchievementNotification(ach);
+                    }
+                    // puzzle_speedrun viene controllato alla fine di un puzzle
+                }
+                
+                // SURVIVAL achievements are checked in endGame() function
+                // survival_first, survival_duration, survival_master
+                if (ach.type === 'survival' && ach.id === 'survival_master' && level >= 5 && survivalMode) {
+                    // survival_master is checked during gameplay
+                    ach.unlocked = true;
+                    showAchievementNotification(ach);
+                }
+                
+                // SKINS achievements
+                if (ach.type === 'skins') {
+                    const unlockedSkinsCount = snakeSkins.filter(s => s.unlocked).length;
+                    if (ach.id === 'skin_collector' && unlockedSkinsCount >= 3) {
+                        ach.unlocked = true;
+                        showAchievementNotification(ach);
+                    } else if (ach.id === 'skin_enthusiast' && unlockedSkinsCount >= 6) {
+                        ach.unlocked = true;
+                        showAchievementNotification(ach);
+                    } else if (ach.id === 'skin_legend' && unlockedSkinsCount === snakeSkins.length) {
+                        ach.unlocked = true;
+                        showAchievementNotification(ach);
+                    }
+                }
+            });
+        }
+
+        function showAchievementNotification(ach) {
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 20px 30px;
+                border-radius: 15px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+                font-weight: bold;
+                z-index: 10000;
+                animation: slideIn 0.5s ease-out;
+                text-align: center;
+            `;
+            const t = translations[currentLang] || translations.it;
+            const unlockedText = currentLang === 'it' ? '🎉 ACHIEVEMENT SBLOCCATO!' : '🎉 ACHIEVEMENT UNLOCKED!';
+            const name = (ach.name && (ach.name[currentLang] || ach.name.it)) || ach.name;
+            const desc = (ach.desc && (ach.desc[currentLang] || ach.desc.it)) || ach.desc;
+            notification.innerHTML = `${unlockedText}<br>${ach.icon} ${name}<br>${desc}`;
+            document.body.appendChild(notification);
+            // trigger confetti and sound when unlocked
+            try {
+                triggerConfetti();
+                if (customSettings.enableSound) playAchievementSound();
+            } catch (e) {}
+            setTimeout(() => notification.remove(), 3000);
+        }
+
+        // --- Audio / Sounds (simple synthesized sounds via WebAudio) ---
+        let audioCtx = null;
+        function ensureAudio() {
+            if (audioCtx) return;
+            try {
+                const AC = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AC();
+            } catch (e) {
+                audioCtx = null;
+            }
+        }
+
+        function playTone(freq, duration, type = 'sine', volume = 0.05) {
+            if (!customSettings.enableSound) return;
+            ensureAudio();
+            if (!audioCtx) return;
+            const o = audioCtx.createOscillator();
+            const g = audioCtx.createGain();
+            o.type = type;
+            o.frequency.value = freq;
+            g.gain.value = volume;
+            o.connect(g);
+            g.connect(audioCtx.destination);
+            o.start();
+            setTimeout(() => { try { o.stop(); } catch (e) {} }, duration);
+        }
+
+        function playEatSound() {
+            playTone(880, 90, 'sine', 0.06);
+        }
+
+        function playGameOverSound() {
+            playTone(150, 300, 'sawtooth', 0.08);
+            setTimeout(() => playTone(100, 200, 'sine', 0.06), 120);
+        }
+
+        function playAchievementSound() {
+            playTone(1200, 120, 'triangle', 0.06);
+            setTimeout(() => playTone(1500, 90, 'triangle', 0.05), 120);
+        }
+
+        // --- Confetti ---
+        const confetti = { particles: [], anim: null, ctx: null, canvas: null };
+        function initConfettiCanvas() {
+            confetti.canvas = document.getElementById('confettiCanvas');
+            if (!confetti.canvas) return;
+            confetti.ctx = confetti.canvas.getContext('2d');
+            setConfettiSize();
+        }
+
+        function setConfettiSize() {
+            if (!confetti.canvas) return;
+            confetti.canvas.width = canvas.width;
+            confetti.canvas.height = canvas.height;
+            // position overlay exactly over game canvas
+            const rect = canvas.getBoundingClientRect();
+            const parentRect = canvas.parentElement.getBoundingClientRect();
+            confetti.canvas.style.left = (canvas.offsetLeft) + 'px';
+            confetti.canvas.style.top = (canvas.offsetTop) + 'px';
+            confetti.canvas.style.width = canvas.width + 'px';
+            confetti.canvas.style.height = canvas.height + 'px';
+        }
+
+        function triggerConfetti(duration = 1500) {
+            if (!confetti.ctx) initConfettiCanvas();
+            if (confetti.canvas) confetti.canvas.style.display = 'block';
+            const colors = ['#ff3b3b','#ffcc00','#4dd0e1','#8e44ad','#2ecc71'];
+            for (let i=0;i<40;i++) {
+                confetti.particles.push({
+                    x: Math.random()*confetti.canvas.width,
+                    y: -10 - Math.random()*20,
+                    vx: (Math.random()-0.5)*4,
+                    vy: Math.random()*3+2,
+                    size: Math.random()*6+4,
+                    color: colors[Math.floor(Math.random()*colors.length)],
+                    rot: Math.random()*360,
+                    spin: (Math.random()-0.5)*10
+                });
+            }
+            const start = performance.now();
+            if (confetti.anim) cancelAnimationFrame(confetti.anim);
+            function step(ts){
+                const ctx2 = confetti.ctx;
+                ctx2.clearRect(0,0,confetti.canvas.width, confetti.canvas.height);
+                for (let p of confetti.particles) {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += 0.05;
+                    p.rot += p.spin;
+                    ctx2.save();
+                    ctx2.translate(p.x, p.y);
+                    ctx2.rotate(p.rot*Math.PI/180);
+                    ctx2.fillStyle = p.color;
+                    ctx2.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
+                    ctx2.restore();
+                }
+                confetti.particles = confetti.particles.filter(p => p.y < confetti.canvas.height + 50);
+                if (performance.now() - start < duration || confetti.particles.length>0) {
+                    confetti.anim = requestAnimationFrame(step);
+                } else {
+                    ctx2.clearRect(0,0,confetti.canvas.width, confetti.canvas.height);
+                    confetti.anim = null;
+                    if (confetti.canvas) confetti.canvas.style.display = 'none';
+                }
+            }
+            confetti.anim = requestAnimationFrame(step);
+        }
+
+        
+
+
+        // Tester mode functions
+        function unlockAllAchievements() {
+            if (!isTesterMode) return;
+            achievements.forEach(ach => ach.unlocked = true);
+            // NOT saving to localStorage - tester mode achievements don't persist
+            renderAchievements();
+            updateStats();
+            alert('✅ Tutti gli achievement sbloccati (solo per questa sessione di test)!');
+        }
+
+        function resetAllAchievements() {
+            if (!isTesterMode) return;
+            if (!confirm('⚠️ Sei sicuro? Questo resetterà TUTTI gli achievement.')) return;
+            achievements.forEach(ach => ach.unlocked = false);
+            // NOT saving to localStorage
+            renderAchievements();
+            updateStats();
+            alert('✅ Tutti gli achievement resettati!');
+        }
+
+        function clearLocalStorage() {
+            if (!isTesterMode) return;
+            if (!confirm('⚠️ ATTENZIONE: Questo cancellerà TUTTI i dati salvati (stats, achievements, settings). Continua?')) return;
+            localStorage.removeItem('snakeStats');
+            localStorage.removeItem('snakeAchievements');
+            localStorage.removeItem('snakeSettings');
+            stats = { maxScore: 0, maxLevel: 0, gamesPlayed: 0 };
+            achievements.forEach(ach => ach.unlocked = false);
+            loadDefaultSettings();
+            renderAchievements();
+            updateStats();
+            alert('✅ Tutti i dati cancellati! La pagina sarà ricaricata.');
+            location.reload();
+        }
+
+        function showAchievements() {
+            document.getElementById('achievementsOverlay').style.display = 'block';
+            document.getElementById('achievementsModal').style.display = 'block';
+            renderAchievements();
+            updateStats();
+        }
+
+        function closeAchievements() {
+            document.getElementById('achievementsOverlay').style.display = 'none';
+            document.getElementById('achievementsModal').style.display = 'none';
+        }
+
+        function renderAchievements() {
+            const grid = document.getElementById('achievementsGrid');
+            grid.innerHTML = '';
+            achievements.forEach(ach => {
+                const card = document.createElement('div');
+                card.className = `achievement-card ${ach.unlocked ? 'unlocked' : 'locked'}`;
+                const name = (ach.name && (ach.name[currentLang] || ach.name.it)) || ach.name;
+                const desc = (ach.desc && (ach.desc[currentLang] || ach.desc.it)) || ach.desc;
+                card.innerHTML = `
+                    <div class="achievement-icon">${ach.icon}</div>
+                    <div class="achievement-name">${name}</div>
+                    <div class="achievement-desc">${desc}</div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function updateStats() {
+            document.getElementById('maxScore').textContent = stats.maxScore;
+            document.getElementById('maxLevel').textContent = stats.maxLevel;
+            document.getElementById('achievementCount').textContent = achievements.filter(a => a.unlocked).length;
+            document.getElementById('gamesPlayed').textContent = stats.gamesPlayed;
+            
+            // Update daily challenges
+            renderDailyChallenges();
+            
+            // Update challenge mode
+            renderChallengeMode();
+            
+            // Update puzzle mode
+            renderPuzzleMode();
+            
+            // Update detailed stats
+            renderDetailedStats();
+        }
+
+        function resetDailyChallengesIfNeeded() {
+            const today = new Date().toDateString();
+            if (lastChallengeResetDate !== today) {
+                dailyChallenges.forEach(c => { c.progress = 0; c.completed = false; });
+                lastChallengeResetDate = today;
+                localStorage.setItem('lastChallengeResetDate', today);
+                localStorage.setItem('snakeDailyChallenges', JSON.stringify(dailyChallenges));
+            }
+        }
+
+        function renderDailyChallenges() {
+            resetDailyChallengesIfNeeded();
+            const container = document.getElementById('dailyChallengesContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            const title = document.createElement('h3');
+            title.textContent = currentLang === 'it' ? '📅 Challenge di Oggi' : '📅 Today\'s Challenges';
+            container.appendChild(title);
+            
+            dailyChallenges.forEach(challenge => {
+                const card = document.createElement('div');
+                card.style.cssText = 'border:1px solid #ddd;padding:12px;margin:8px 0;border-radius:5px;background:#f9f9f9;';
+                const name = challenge.name[currentLang] || challenge.name.it;
+                const desc = challenge.desc[currentLang] || challenge.desc.it;
+                const percent = Math.min(100, Math.round((challenge.progress / challenge.target) * 100));
+                card.innerHTML = `
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                        <span style="font-weight:bold;">${challenge.icon} ${name}</span>
+                        <span style="background:#667eea;color:white;padding:4px 8px;border-radius:3px;font-size:0.8em;">${percent}%</span>
+                    </div>
+                    <p style="margin:5px 0;font-size:0.9em;">${desc}</p>
+                    <div style="background:#eee;height:8px;border-radius:4px;overflow:hidden;">
+                        <div style="background:#667eea;height:100%;width:${percent}%;"></div>
+                    </div>
+                    <p style="margin:5px 0;font-size:0.85em;color:#666;">${challenge.progress}/${challenge.target} ${challenge.completed ? '✅ Completato!' : ''}</p>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function renderChallengeMode() {
+            const selector = document.getElementById('challengeSelector');
+            const info = document.getElementById('challengeInfo');
+            if (!selector || !info) return;
+            
+            selector.innerHTML = '<h3>' + (currentLang === 'it' ? '🎯 Seleziona una Sfida' : '🎯 Select a Challenge') + '</h3>';
+            
+            customChallenges.forEach(challenge => {
+                const btn = document.createElement('button');
+                btn.style.cssText = 'display:block;width:100%;padding:12px;margin:8px 0;border:2px solid #667eea;background:white;border-radius:5px;cursor:pointer;font-weight:bold;';
+                const name = challenge.name[currentLang] || challenge.name.it;
+                btn.textContent = `${challenge.icon} ${name}`;
+                btn.onclick = () => selectChallenge(challenge, btn);
+                selector.appendChild(btn);
+            });
+            
+            if (selectedChallenge) {
+                const name = selectedChallenge.name[currentLang] || selectedChallenge.name.it;
+                const desc = selectedChallenge.desc[currentLang] || selectedChallenge.desc.it;
+                info.innerHTML = `
+                    <div style="background:#f0f4ff;padding:15px;border-radius:5px;border-left:4px solid #667eea;">
+                        <h4>${selectedChallenge.icon} ${name}</h4>
+                        <p>${desc}</p>
+                        <p><strong>${currentLang === 'it' ? 'Obiettivo' : 'Goal'}:</strong> ${selectedChallenge.target}</p>
+                        <button onclick="setGameMode('challenge', this); startChallenge()" style="background:#667eea;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-weight:bold;margin-top:10px;">
+                            ${currentLang === 'it' ? '▶ Inizia Sfida' : '▶ Start Challenge'}
+                        </button>
+                    </div>
+                `;
+            } else {
+                info.innerHTML = '<p style="color:#999;">' + (currentLang === 'it' ? 'Seleziona una sfida per iniziare' : 'Select a challenge to start') + '</p>';
+            }
+        }
+
+        function selectChallenge(challenge, btn) {
+            selectedChallenge = challenge;
+            document.querySelectorAll('#challengeSelector button').forEach(b => b.style.background = 'white');
+            btn.style.background = '#667eea';
+            btn.style.color = 'white';
+            renderChallengeMode();
+        }
+
+        function startChallenge() {
+            if (!selectedChallenge) return;
+            closeAchievements();
+            resetGame();
+            startGame();
+        }
+
+        function renderDetailedStats() {
+            const container = document.getElementById('detailedStatsContainer');
+            if (!container) return;
+            
+            const playtime = Math.floor(stats.totalPlayTime / 60);
+            const avgScore = stats.gamesPlayed > 0 ? Math.round(stats.maxScore / stats.gamesPlayed) : 0;
+            
+            container.innerHTML = `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                    <div style="background:#e8f5e9;padding:15px;border-radius:5px;border-left:4px solid #4caf50;">
+                        <p style="margin:0;font-size:0.9em;color:#666;">${currentLang === 'it' ? 'Tempo di Gioco' : 'Play Time'}</p>
+                        <h3 style="margin:5px 0;color:#4caf50;">${playtime} min</h3>
+                    </div>
+                    <div style="background:#fff3e0;padding:15px;border-radius:5px;border-left:4px solid #ff9800;">
+                        <p style="margin:0;font-size:0.9em;color:#666;">${currentLang === 'it' ? 'Cibo Consumato' : 'Food Eaten'}</p>
+                        <h3 style="margin:5px 0;color:#ff9800;">${stats.totalFoodEaten} 🍎</h3>
+                    </div>
+                    <div style="background:#e3f2fd;padding:15px;border-radius:5px;border-left:4px solid #2196f3;">
+                        <p style="margin:0;font-size:0.9em;color:#666;">${currentLang === 'it' ? 'Punteggio Medio' : 'Avg Score'}</p>
+                        <h3 style="margin:5px 0;color:#2196f3;">${avgScore}</h3>
+                    </div>
+                    <div style="background:#f3e5f5;padding:15px;border-radius:5px;border-left:4px solid #9c27b0;">
+                        <p style="margin:0;font-size:0.9em;color:#666;">${currentLang === 'it' ? 'Sessioni' : 'Sessions'}</p>
+                        <h3 style="margin:5px 0;color:#9c27b0;">${stats.sessionCount}</h3>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPuzzleMode() {
+            const selector = document.getElementById('puzzleSelector');
+            const info = document.getElementById('puzzleInfo');
+            if (!selector || !info) return;
+            
+            selector.innerHTML = '';
+            puzzleLevels.forEach((level, idx) => {
+                const btn = document.createElement('button');
+                btn.style.cssText = 'padding:15px;border:2px solid #9c27b0;background:white;border-radius:5px;cursor:pointer;font-weight:bold;transition:all 0.3s;';
+                const name = level.name[currentLang] || level.name.it;
+                const completed = puzzleLevelCompleted[idx] ? '✅' : '🔒';
+                btn.textContent = `${completed} ${name}`;
+                btn.onmouseover = () => btn.style.background = '#f3e5f5';
+                btn.onmouseout = () => btn.style.background = 'white';
+                btn.onclick = () => selectPuzzleLevel(idx, btn);
+                selector.appendChild(btn);
+            });
+            
+            if (currentPuzzleLevel !== null && currentPuzzleLevel !== undefined && puzzleLevels[currentPuzzleLevel]) {
+                const level = puzzleLevels[currentPuzzleLevel];
+                const name = level.name[currentLang] || level.name.it;
+                const difficulty = level.difficulty;
+                const diffNames = { easy: currentLang === 'it' ? 'Facile' : 'Easy', medium: currentLang === 'it' ? 'Medio' : 'Medium', hard: currentLang === 'it' ? 'Difficile' : 'Hard' };
+                
+                info.innerHTML = `
+                    <div style="background:#f3e5f5;padding:15px;border-radius:5px;border-left:4px solid #9c27b0;">
+                        <h4>🧩 ${name}</h4>
+                        <p><strong>${currentLang === 'it' ? 'Difficolt\u00e0' : 'Difficulty'}:</strong> ${diffNames[difficulty] || difficulty}</p>
+                        <p><strong>${currentLang === 'it' ? 'Obiettivo' : 'Goal'}:</strong> ${level.targetScore} punti</p>
+                        <p><strong>${currentLang === 'it' ? 'Ostacoli' : 'Obstacles'}:</strong> ${level.obstacles.length}</p>
+                        <button onclick="startPuzzleLevel(${currentPuzzleLevel})" style="background:#9c27b0;color:white;border:none;padding:10px 20px;border-radius:5px;cursor:pointer;font-weight:bold;margin-top:10px;">
+                            ${currentLang === 'it' ? '▶ Inizia Puzzle' : '▶ Start Puzzle'}
+                        </button>
+                    </div>
+                `;
+            } else {
+                info.innerHTML = '<p style="color:#999;">' + (currentLang === 'it' ? 'Seleziona un puzzle per iniziare' : 'Select a puzzle to start') + '</p>';
+            }
+        }
+
+        function renderSnakeSkins() {
+            const container = document.getElementById('skinsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            
+            snakeSkins.forEach(skin => {
+                const card = document.createElement('div');
+                card.style.cssText = 'border:2px solid #667eea;padding:15px;border-radius:5px;background:#f9f9f9;cursor:pointer;transition:all 0.3s;';
+                const name = skin.name[currentLang] || skin.name.it;
+                const isUnlocked = skin.unlocked;
+                const isSelected = currentSnakeSkin === skin.id;
+                
+                // Get unlock text in current language
+                let unlockedByText = skin.unlockedBy;
+                if (typeof skin.unlockedBy === 'object' && skin.unlockedBy !== null) {
+                    unlockedByText = skin.unlockedBy[currentLang] || skin.unlockedBy.it;
+                }
+                
+                if (isSelected) {
+                    card.style.background = '#e8eaf6';
+                    card.style.borderColor = '#667eea';
+                    card.style.boxShadow = '0 0 10px rgba(102, 126, 234, 0.5)';
+                }
+                
+                // Create preview of the skin
+                const preview = document.createElement('div');
+                preview.style.cssText = `
+                    display:flex;
+                    gap:5px;
+                    margin-bottom:10px;
+                    padding:10px;
+                    background:white;
+                    border-radius:3px;
+                    border:1px solid #ddd;
+                `;
+                
+                // Draw head
+                const head = document.createElement('div');
+                head.style.cssText = `width:20px;height:20px;background:${skin.head};border-radius:2px;box-shadow:0 0 5px ${skin.head};`;
+                preview.appendChild(head);
+                
+                // Draw body segments
+                for (let i = 0; i < 2; i++) {
+                    const body = document.createElement('div');
+                    body.style.cssText = `width:20px;height:20px;background:${skin.body};border-radius:2px;`;
+                    preview.appendChild(body);
+                }
+                
+                card.appendChild(preview);
+                
+                // Name
+                const nameEl = document.createElement('p');
+                nameEl.style.cssText = 'margin:8px 0;font-weight:bold;color:#333;';
+                nameEl.textContent = name;
+                card.appendChild(nameEl);
+                
+                // Status
+                const statusEl = document.createElement('p');
+                statusEl.style.cssText = 'margin:5px 0;font-size:0.9em;color:#666;';
+                if (isUnlocked) {
+                    statusEl.textContent = isSelected ? (currentLang === 'it' ? '✅ SELEZIONATO' : '✅ SELECTED') : (currentLang === 'it' ? '✅ Sbloccato' : '✅ Unlocked');
+                    statusEl.style.color = isSelected ? '#667eea' : '#4caf50';
+                    
+                    // Button to select
+                    if (!isSelected) {
+                        const btn = document.createElement('button');
+                        btn.style.cssText = 'width:100%;padding:8px;background:#667eea;color:white;border:none;border-radius:3px;cursor:pointer;font-weight:bold;margin-top:8px;';
+                        btn.textContent = currentLang === 'it' ? 'Seleziona' : 'Select';
+                        btn.onclick = () => selectSnakeSkin(skin.id);
+                        card.appendChild(btn);
+                    }
+                } else {
+                    const lockedLabel = currentLang === 'it' ? '🔒 Bloccato' : '🔒 Locked';
+                    statusEl.textContent = `${lockedLabel} - ${unlockedByText}`;
+                    statusEl.style.color = '#ff9800';
+                }
+                card.appendChild(statusEl);
+                
+                card.onmouseover = () => {
+                    if (!isSelected) card.style.background = '#f0f0f0';
+                };
+                card.onmouseout = () => {
+                    if (!isSelected) card.style.background = '#f9f9f9';
+                };
+                
+                container.appendChild(card);
+            });
+        }
+
+        function selectSnakeSkin(skinId) {
+            currentSnakeSkin = skinId;
+            localStorage.setItem('snakeCurrentSkin', skinId);
+            renderSnakeSkins();
+        }
+
+        function checkSkinUnlocks() {
+            snakeSkins.forEach(skin => {
+                if (skin.unlockRequirement === null) {
+                    // Default skin is always unlocked
+                    skin.unlocked = true;
+                } else if (skin.unlockRequirement === 'all_dailies') {
+                    // Check if all daily challenges are completed
+                    skin.unlocked = dailyChallenges.every(c => c.completed);
+                } else if (skin.unlockRequirement.startsWith('ach_')) {
+                    // Check achievement
+                    const ach = achievements.find(a => a.id === skin.unlockRequirement);
+                    skin.unlocked = ach && ach.unlocked;
+                } else if (skin.unlockRequirement.startsWith('daily_')) {
+                    // Check daily challenge
+                    const dc = dailyChallenges.find(c => c.id === skin.unlockRequirement);
+                    skin.unlocked = dc && dc.completed;
+                }
+                
+                // Update unlockedBy text based on unlock status and language
+                if (skin.unlocked && skin.unlockRequirement !== null) {
+                    skin.unlockedBy = { it: '✅ Sbloccato!', en: '✅ Unlocked!' };
+                }
+            });
+        }
+
+        function selectPuzzleLevel(levelIdx, btn) {
+            currentPuzzleLevel = levelIdx;
+            document.querySelectorAll('#puzzleSelector button').forEach(b => b.style.background = 'white');
+            btn.style.background = '#f3e5f5';
+            renderPuzzleMode();
+        }
+
+        function startPuzzleLevel(levelIdx) {
+            if (levelIdx === null || levelIdx === undefined) return;
+            const puzzleLevel = puzzleLevels[levelIdx];
+            puzzleObstacles = puzzleLevel.obstacles;
+            
+            // Set up the game for puzzle mode
+            setDifficulty(puzzleLevel.difficulty);
+            puzzleMode = true;
+            currentGameMode = 'puzzle';
+            puzzleStartTime = Date.now(); // Record start time for speedrun achievement
+            
+            // Set custom starting position
+            snake = [{ x: puzzleLevel.startPos.x, y: puzzleLevel.startPos.y }];
+            dx = 1;
+            dy = 0;
+            nextDx = 1;
+            nextDy = 0;
+            score = 0;
+            level = 1;
+            scoreDisplay.textContent = score;
+            levelDisplay.textContent = level;
+            
+            closeAchievements();
+            resetGame();
+            startGame();
+        }
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            // If a tab element was passed, mark it active. Otherwise try to find by id.
+            const tabEl = arguments[1] || null;
+            if (tabEl && tabEl.classList) {
+                tabEl.classList.add('active');
+            } else {
+                // fallback: try to find the tab by tabName
+                const possible = document.querySelector(`.tab[onclick*="${tabName}"]`);
+                if (possible) possible.classList.add('active');
+            }
+            document.getElementById(tabName).classList.add('active');
+            
+            // Update dropdown to match
+            const dropdown = document.getElementById('tabDropdown');
+            if (dropdown) dropdown.value = tabName;
+        }
+
+        function switchTabFromDropdown(tabName) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            
+            // Render appropriate content when tab is switched
+            if (tabName === 'skins') {
+                renderSnakeSkins();
+            } else if (tabName === 'achievements') {
+                renderAchievements();
+            } else if (tabName === 'daily') {
+                renderDailyChallenges();
+            } else if (tabName === 'challenges') {
+                renderChallengeMode();
+            } else if (tabName === 'puzzle') {
+                renderPuzzleMode();
+            } else if (tabName === 'detailedStats') {
+                renderDetailedStats();
+            }
+        }
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // initialize confetti overlay
+        initConfettiCanvas();
+        window.addEventListener('resize', () => { try { setConfettiSize(); } catch (e) {} });
+
+        let gridSize = 20;
+        let tileCount = canvas.width / gridSize;
+
+        let snake = [
+            { x: 10, y: 10 }
+        ];
+
+        let food = {
+            x: Math.floor(Math.random() * tileCount),
+            y: Math.floor(Math.random() * tileCount)
+        };
+
+        let dx = 1;
+        let dy = 0;
+        let nextDx = 1;
+        let nextDy = 0;
+
+        let score = 0;
+        let level = 1;
+        let gameRunning = false;
+        let gamePaused = false;
+        let gameLoopSpeed = 100;
+        let gameLoop;
+        let sessionStartTime = 0;
+        let foodEatenThisSession = 0;
+
+        const scoreDisplay = document.getElementById('score');
+        const levelDisplay = document.getElementById('level');
+        const gameOverScreen = document.getElementById('gameOver');
+        const overlay = document.getElementById('overlay');
+
+        function drawGame() {
+            // Clear canvas
+            ctx.fillStyle = '#1a1a2e';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Draw grid (optional)
+            if (customSettings.showGrid) {
+                ctx.strokeStyle = '#2a2a4e';
+                ctx.lineWidth = 0.5;
+                for (let i = 0; i <= tileCount; i++) {
+                    ctx.beginPath();
+                    ctx.moveTo(i * gridSize, 0);
+                    ctx.lineTo(i * gridSize, canvas.height);
+                    ctx.stroke();
+
+                    ctx.beginPath();
+                    ctx.moveTo(0, i * gridSize);
+                    ctx.lineTo(canvas.width, i * gridSize);
+                    ctx.stroke();
+                }
+            }
+
+            // Get current skin
+            const currentSkin = snakeSkins.find(s => s.id === currentSnakeSkin) || snakeSkins[0];
+
+            // Draw snake
+            snake.forEach((segment, index) => {
+                if (index === 0) {
+                    // Head
+                    ctx.fillStyle = currentSkin.head;
+                    ctx.shadowColor = currentSkin.head;
+                    ctx.shadowBlur = 10;
+                } else {
+
+                    // Body
+                    ctx.fillStyle = currentSkin.body;
+                    ctx.shadowColor = 'transparent';
+                }
+                ctx.fillRect(
+                    segment.x * gridSize + 1,
+                    segment.y * gridSize + 1,
+                    gridSize - 2,
+                    gridSize - 2
+                );
+            });
+
+            ctx.shadowColor = 'transparent';
+
+            // Draw food
+            ctx.fillStyle = '#ff3333';
+            ctx.shadowColor = '#ff3333';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(
+                food.x * gridSize + gridSize / 2,
+                food.y * gridSize + gridSize / 2,
+                gridSize / 2 - 2,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+
+            // Draw obstacles in puzzle mode
+            if (puzzleMode && puzzleObstacles && puzzleObstacles.length > 0) {
+                ctx.fillStyle = '#ff6b6b';
+                ctx.shadowColor = '#ff6b6b';
+                ctx.shadowBlur = 5;
+                puzzleObstacles.forEach(obstacle => {
+                    ctx.fillRect(
+                        obstacle[0] * gridSize + 1,
+                        obstacle[1] * gridSize + 1,
+                        gridSize - 2,
+                        gridSize - 2
+                    );
+                });
+            }
+
+            ctx.shadowColor = 'transparent';
+        }
+
+        function update() {
+            if (!gameRunning || gamePaused) return;
+
+            // Update direction
+            dx = nextDx;
+            dy = nextDy;
+
+            // Calculate new head position
+            const head = snake[0];
+            const newHead = {
+                x: head.x + dx,
+                y: head.y + dy
+            };
+
+            // Check collision with obstacles in puzzle mode
+            if (puzzleMode && puzzleObstacles && puzzleObstacles.length > 0) {
+                if (puzzleObstacles.some(obs => obs[0] === newHead.x && obs[1] === newHead.y)) {
+                    endGame();
+                    return;
+                }
+            }
+
+            // Check collision with walls - GAME OVER (se wallCollision è abilitato)
+            // In tester mode, sempre wrap (passa attraverso i muri)
+            if (isTesterMode) {
+                // In tester mode: wrap around walls
+                newHead.x = (newHead.x + tileCount) % tileCount;
+                newHead.y = (newHead.y + tileCount) % tileCount;
+            } else if (customSettings.wallCollision) {
+                if (newHead.x < 0 || newHead.x >= tileCount || newHead.y < 0 || newHead.y >= tileCount) {
+                    endGame();
+                    return;
+                }
+            } else {
+                // Se non abilitato, il serpente wrappa intorno
+                newHead.x = (newHead.x + tileCount) % tileCount;
+                newHead.y = (newHead.y + tileCount) % tileCount;
+            }
+
+            // Check collision with self
+            if (snake.some(segment => segment.x === newHead.x && segment.y === newHead.y)) {
+                endGame();
+                return;
+            }
+
+            snake.unshift(newHead);
+
+            // Check collision with food
+            if (newHead.x === food.x && newHead.y === food.y) {
+                score += customSettings.pointsPerFood * level;
+                scoreDisplay.textContent = score;
+                
+                // Track food eaten for statistics and daily challenges
+                foodEatenThisSession++;
+                stats.totalFoodEaten++;
+                dailyChallenges[0].progress = Math.min(foodEatenThisSession, dailyChallenges[0].target);
+                if (dailyChallenges[0].progress >= dailyChallenges[0].target && !dailyChallenges[0].completed) {
+                    dailyChallenges[0].completed = true;
+                    checkSkinUnlocks();
+                }
+
+                // In Survival Mode, add bonus time
+                if (survivalMode) {
+                    survivalTimeRemaining += survivalTimeBonus;
+                    document.getElementById('survivalTimerText').textContent = survivalTimeRemaining + 's';
+                    // Reset color if time was critical
+                    if (survivalTimeRemaining > 10) {
+                        document.getElementById('survivalTimeDisplay').style.color = '#ff6b6b';
+                    }
+                }
+
+                // Increase level every X points (da impostazioni)
+                const newLevel = Math.floor(score / customSettings.pointsPerLevel) + 1;
+                if (newLevel > level) {
+                    level = newLevel;
+                    levelDisplay.textContent = level;
+                    
+                    // Update daily challenges for level
+                    dailyChallenges[1].progress = level;
+                    if (level >= dailyChallenges[1].target && !dailyChallenges[1].completed) {
+                        dailyChallenges[1].completed = true;
+                        checkSkinUnlocks();
+                    }
+                    
+                    gameLoopSpeed = Math.max(customSettings.minSpeed, gameLoopSpeed - customSettings.accelerationRate);
+                    clearInterval(gameLoop);
+                    gameLoop = setInterval(gameLoopFunction, gameLoopSpeed);
+                }
+                
+                // Update daily challenges for score
+                dailyChallenges[2].progress = score;
+                if (score >= dailyChallenges[2].target && !dailyChallenges[2].completed) {
+                    dailyChallenges[2].completed = true;
+                    checkSkinUnlocks();
+                }
+
+                checkAchievements();
+
+                // Generate new food
+                let newFood;
+                do {
+                    newFood = {
+                        x: Math.floor(Math.random() * tileCount),
+                        y: Math.floor(Math.random() * tileCount)
+                    };
+                } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+                food = newFood;
+
+                // Vibration feedback
+                if (navigator.vibrate) {
+                    navigator.vibrate([50, 30, 50]);
+                }
+                // Play eat sound
+                try { if (customSettings.enableSound) playEatSound(); } catch (e) {}
+            } else {
+                snake.pop();
+            }
+        }
+
+        function gameLoopFunction() {
+            update();
+            drawGame();
+        }
+
+        function startGame() {
+            if (gameRunning) return;
+            gameRunning = true;
+            gamePaused = false;
+            document.getElementById('startBtn').textContent = '⏸ In Gioco';
+            // clear session achievements for this new run
+            newlyUnlockedThisSession = [];
+            
+            // Initialize session tracking
+            sessionStartTime = Date.now();
+            foodEatenThisSession = 0;
+            stats.sessionCount++;
+            
+            // Initialize Survival Mode timer
+            if (survivalMode) {
+                survivalTimeRemaining = survivalTime;
+                survivalStartTime = Date.now(); // Track survival start time for achievement
+                document.getElementById('survivalTimeDisplay').style.display = 'block';
+                updateSurvivalTimer();
+            } else {
+                document.getElementById('survivalTimeDisplay').style.display = 'none';
+            }
+            
+            // Show touch buttons if enabled
+            updateTouchButtonsVisibility();
+            
+            gameLoop = setInterval(gameLoopFunction, gameLoopSpeed);
+            drawGame();
+        }
+
+        function updateSurvivalTimer() {
+            if (!survivalMode || !gameRunning) return;
+            
+            survivalTimeRemaining--;
+            if (document.getElementById('survivalTimerText')) {
+                document.getElementById('survivalTimerText').textContent = survivalTimeRemaining + 's';
+                // Change color as time runs out
+                if (survivalTimeRemaining <= 10) {
+                    document.getElementById('survivalTimeDisplay').style.color = '#ff3333';
+                }
+            }
+            
+            if (survivalTimeRemaining <= 0) {
+                // Time's up! End game
+                endGame();
+                gameRunning = false;
+                clearInterval(gameLoop);
+                document.getElementById('gameOverTitle').textContent = currentLang === 'it' ? 'TEMPO SCADUTO!' : 'TIME\'S UP!';
+            } else {
+                // Schedule next update
+                setTimeout(updateSurvivalTimer, 1000);
+            }
+        }
+
+        function togglePause() {
+            if (!gameRunning) return;
+            gamePaused = !gamePaused;
+            document.getElementById('startBtn').textContent = gamePaused ? '▶ Riprendi' : '⏸ In Gioco';
+        }
+
+        function resetGame() {
+            gameRunning = false;
+            gamePaused = false;
+            clearInterval(gameLoop);
+            newlyUnlockedThisSession = [];
+
+            snake = [{ x: 10, y: 10 }];
+            dx = 1;
+            dy = 0;
+            nextDx = 1;
+            nextDy = 0;
+            score = 0;
+            level = 1;
+            gameLoopSpeed = 100;
+
+            scoreDisplay.textContent = score;
+            levelDisplay.textContent = level;
+
+            gameOverScreen.style.display = 'none';
+            overlay.style.display = 'none';
+
+            document.getElementById('startBtn').textContent = '▶ Inizia Gioco';
+
+            // Generate new food
+            food = {
+                x: Math.floor(Math.random() * tileCount),
+                y: Math.floor(Math.random() * tileCount)
+            };
+
+            drawGame();
+        }
+
+        function endGame() {
+            // In tester mode, just restart silently without game over screen
+            if (isTesterMode) {
+                console.log('Tester Mode: Game Over bypassed - restarting');
+                resetGame();
+                return;
+            }
+
+            // In Zen mode, don't end game - just wrap and continue
+            if (zenMode) {
+                return;
+            }
+
+            // In Puzzle mode, check if puzzle was completed
+            if (puzzleMode && currentPuzzleLevel !== null && currentPuzzleLevel !== undefined) {
+                const targetScore = puzzleLevels[currentPuzzleLevel].targetScore;
+                if (score >= targetScore) {
+                    // Puzzle completed!
+                    puzzleLevelCompleted[currentPuzzleLevel] = true;
+                    localStorage.setItem('snakePuzzleProgress', JSON.stringify(puzzleLevelCompleted));
+                    document.getElementById('gameOverTitle').textContent = currentLang === 'it' ? '🎉 PUZZLE COMPLETATO!' : '🎉 PUZZLE COMPLETED!';
+                    
+                    // Check for puzzle speedrun achievement (completed in under 30 seconds)
+                    if (puzzleStartTime && (Date.now() - puzzleStartTime) / 1000 < 30) {
+                        const speedrunAch = achievements.find(a => a.id === 'puzzle_speedrun');
+                        if (speedrunAch && !speedrunAch.unlocked) {
+                            speedrunAch.unlocked = true;
+                            showAchievementNotification(speedrunAch);
+                        }
+                    }
+                    
+                    checkModeAchievements();
+                }
+                puzzleMode = false;
+            }
+
+            // In Survival mode, lose if time runs out (not collision)
+            if (survivalMode) {
+                // Check survival achievements
+                if (survivalStartTime) {
+                    const survivalDuration = (Date.now() - survivalStartTime) / 1000; // in seconds
+                    
+                    // survival_first: survive initial 60 seconds
+                    if (survivalDuration >= 60) {
+                        const survivalFirstAch = achievements.find(a => a.id === 'survival_first');
+                        if (survivalFirstAch && !survivalFirstAch.unlocked) {
+                            survivalFirstAch.unlocked = true;
+                            showAchievementNotification(survivalFirstAch);
+                        }
+                    }
+                    
+                    // survival_duration: survive 180 seconds
+                    if (survivalDuration >= 180) {
+                        const survivalDurationAch = achievements.find(a => a.id === 'survival_duration');
+                        if (survivalDurationAch && !survivalDurationAch.unlocked) {
+                            survivalDurationAch.unlocked = true;
+                            showAchievementNotification(survivalDurationAch);
+                        }
+                    }
+                }
+                survivalStartTime = null;
+            }
+
+            gameRunning = false;
+            clearInterval(gameLoop);
+
+            // Hide touch buttons
+            const touchContainer = document.getElementById('touchControlsContainer');
+            if (touchContainer) touchContainer.style.display = 'none';
+
+            // Calculate session playtime
+            const sessionDuration = (Date.now() - sessionStartTime) / 1000; // in seconds
+            stats.totalPlayTime += sessionDuration;
+
+            // Update stats
+            stats.gamesPlayed++;
+            if (score > stats.maxScore) {
+                stats.maxScore = score;
+            }
+            if (level > stats.maxLevel) {
+                stats.maxLevel = level;
+            }
+            saveStats();
+
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalLevel').textContent = level;
+
+            // Check if any achievements were unlocked during this session
+            if (newlyUnlockedThisSession && newlyUnlockedThisSession.length > 0) {
+                const lastId = newlyUnlockedThisSession[newlyUnlockedThisSession.length - 1];
+                const lastAch = achievements.find(a => a.id === lastId);
+                if (lastAch) {
+                    const name = (lastAch.name && (lastAch.name[currentLang] || lastAch.name.it)) || lastAch.name;
+                    document.getElementById('newAchievement').style.display = 'block';
+                    document.getElementById('newAchievement').textContent = `✨ ${lastAch.icon} Achievement Sbloccato: ${name}`;
+                }
+            }
+
+            overlay.style.display = 'block';
+            gameOverScreen.style.display = 'block';
+
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100, 50, 200]);
+            }
+            try { if (customSettings.enableSound) playGameOverSound(); } catch (e) {}
+        }
+
+        // Touch Button Controls
+        function handleTouchButton(direction) {
+            if (!gameRunning) return;
+            
+            if (direction === 'up' && dy === 0) {
+                nextDx = 0;
+                nextDy = -1;
+            } else if (direction === 'down' && dy === 0) {
+                nextDx = 0;
+                nextDy = 1;
+            } else if (direction === 'left' && dx === 0) {
+                nextDx = -1;
+                nextDy = 0;
+            } else if (direction === 'right' && dx === 0) {
+                nextDx = 1;
+                nextDy = 0;
+            }
+        }
+
+        function clearTouchButton() {
+            // Visual feedback cleared
+        }
+
+        // Show/hide touch buttons based on settings
+        function updateTouchButtonsVisibility() {
+            const container = document.getElementById('touchControlsContainer');
+            if (container) {
+                container.style.display = (customSettings.enableTouchControls && gameRunning) ? 'block' : 'none';
+            }
+        }
+
+        // Keyboard controls
+        document.addEventListener('keydown', (e) => {
+            if (!gameRunning) {
+                if (e.key === ' ') {
+                    startGame();
+                }
+                return;
+            }
+
+            const key = e.key.toLowerCase();
+            const controlType = customSettings.controlType || 'arrows';
+
+            // Arrow keys mode
+            if (controlType === 'arrows') {
+                if (key.includes('arrow')) {
+                    e.preventDefault();
+                }
+
+                if (e.key === 'ArrowUp' && dy === 0) {
+                    nextDx = 0;
+                    nextDy = -1;
+                } else if (e.key === 'ArrowDown' && dy === 0) {
+                    nextDx = 0;
+                    nextDy = 1;
+                } else if (e.key === 'ArrowLeft' && dx === 0) {
+                    nextDx = -1;
+                    nextDy = 0;
+                } else if (e.key === 'ArrowRight' && dx === 0) {
+                    nextDx = 1;
+                    nextDy = 0;
+                }
+            }
+            // WASD mode
+            else if (controlType === 'wasd') {
+                if (key === 'w' || key === 'a' || key === 's' || key === 'd') {
+                    e.preventDefault();
+                }
+                
+                if (key === 'w' && dy === 0) {
+                    nextDx = 0;
+                    nextDy = -1;
+                } else if (key === 's' && dy === 0) {
+                    nextDx = 0;
+                    nextDy = 1;
+                } else if (key === 'a' && dx === 0) {
+                    nextDx = -1;
+                    nextDy = 0;
+                } else if (key === 'd' && dx === 0) {
+                    nextDx = 1;
+                    nextDy = 0;
+                }
+            }
+        });
+
+        // TOUCH CONTROLS
+        let touchStartX = 0;
+        let touchStartY = 0;
+        const touchThreshold = 30; // Minimum swipe distance
+
+        document.addEventListener('touchstart', (e) => {
+            if (!customSettings.enableTouchControls || !gameRunning) return;
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchend', (e) => {
+            if (!customSettings.enableTouchControls || !gameRunning) return;
+            
+            const touchEndX = e.changedTouches[0].clientX;
+            const touchEndY = e.changedTouches[0].clientY;
+            
+            const diffX = touchEndX - touchStartX;
+            const diffY = touchEndY - touchStartY;
+            
+            // Determine swipe direction
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > touchThreshold) {
+                // Horizontal swipe
+                if (diffX > 0 && dx === 0) {
+                    // Swipe right
+                    nextDx = 1;
+                    nextDy = 0;
+                } else if (diffX < 0 && dx === 0) {
+                    // Swipe left
+                    nextDx = -1;
+                    nextDy = 0;
+                }
+            } else if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > touchThreshold) {
+                // Vertical swipe
+                if (diffY > 0 && dy === 0) {
+                    // Swipe down
+                    nextDx = 0;
+                    nextDy = 1;
+                } else if (diffY < 0 && dy === 0) {
+                    // Swipe up
+                    nextDx = 0;
+                    nextDy = -1;
+                }
+            }
+        });
+
+        // Add mouse click support for touch buttons (for testing)
+        document.addEventListener('click', (e) => {
+            if (!gameRunning) return;
+            
+            const touchUpBtn = document.getElementById('touchUpBtn');
+            const touchDownBtn = document.getElementById('touchDownBtn');
+            const touchLeftBtn = document.getElementById('touchLeftBtn');
+            const touchRightBtn = document.getElementById('touchRightBtn');
+            
+            if (e.target === touchUpBtn) handleTouchButton('up');
+            else if (e.target === touchDownBtn) handleTouchButton('down');
+            else if (e.target === touchLeftBtn) handleTouchButton('left');
+            else if (e.target === touchRightBtn) handleTouchButton('right');
+        });
+
+        // Toast Message Function
+        function showToastMessage(message, type = 'info') {
+            const colors = {
+                success: '#4caf50',
+                error: '#ff6b6b',
+                warning: '#ff9800',
+                info: '#2196F3'
+            };
+
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                background: ${colors[type] || colors.info};
+                color: white;
+                padding: 15px 25px;
+                border-radius: 10px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+                font-weight: bold;
+                z-index: 10001;
+                animation: slideInBottom 0.3s ease-out;
+                max-width: 300px;
+                word-wrap: break-word;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.animation = 'slideOutBottom 0.3s ease-out';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Save/Load System Functions
+        function showSaveLoadModal() {
+            document.getElementById('saveLoadOverlay').style.display = 'flex';
+            document.getElementById('saveLoadModal').style.display = 'block';
+        }
+
+        function closeSaveLoadModal() {
+            document.getElementById('saveLoadOverlay').style.display = 'none';
+            document.getElementById('saveLoadModal').style.display = 'none';
+        }
+
+        // UTF-8 to Base64 conversion functions
+        function utf8ToBase64(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+        }
+
+        function base64ToUtf8(str) {
+            return decodeURIComponent(escape(atob(str)));
+        }
+
+        function generateSaveCode() {
+            try {
+                // Log per debug
+                console.log('Inizio generazione codice...');
+                console.log('gameVersion:', gameVersion);
+                console.log('stats:', stats);
+                console.log('achievements:', achievements);
+                console.log('customSettings:', customSettings);
+
+                // Raccogli tutti i dati del gioco
+                const saveData = {
+                    version: gameVersion || '1.0.0',
+                    stats: stats || {},
+                    achievements: achievements || [],
+                    dailyChallenges: dailyChallenges || [],
+                    customChallenges: customChallenges || [],
+                    puzzleLevelCompleted: puzzleLevelCompleted || [],
+                    customSettings: customSettings || {},
+                    currentSnakeSkin: currentSnakeSkin || 'classic',
+                    snakeSkins: snakeSkins || [],
+                    timestamp: Date.now()
+                };
+
+                console.log('saveData:', saveData);
+
+                // Converti a JSON e poi a Base64 (con supporto UTF-8)
+                const jsonString = JSON.stringify(saveData);
+                const base64Code = utf8ToBase64(jsonString);
+
+                console.log('base64Code length:', base64Code.length);
+
+                // Mostra il codice
+                document.getElementById('saveCode').value = base64Code;
+                document.getElementById('saveCodeContainer').style.display = 'block';
+                
+                // Mostra messaggio di successo
+                showToastMessage('Codice di salvataggio generato!', 'success');
+            } catch (error) {
+                console.error('Errore nella generazione del codice:', error);
+                console.error('Stack:', error.stack);
+                showToastMessage('Errore: ' + error.message, 'error');
+            }
+        }
+
+        function copySaveCode() {
+            const saveCodeField = document.getElementById('saveCode');
+            if (saveCodeField.value.trim() === '') {
+                showToastMessage('Genera prima un codice di salvataggio', 'warning');
+                return;
+            }
+
+            saveCodeField.select();
+            document.execCommand('copy');
+            showToastMessage('Codice copiato negli appunti!', 'success');
+        }
+
+        function loadSaveCode() {
+            try {
+                const loadCodeField = document.getElementById('loadCode');
+                const base64Code = loadCodeField.value.trim();
+
+                if (!base64Code) {
+                    showToastMessage('Incolla un codice di salvataggio', 'warning');
+                    return;
+                }
+
+                // Decodifica da Base64 a JSON (con supporto UTF-8)
+                const jsonString = base64ToUtf8(base64Code);
+                const saveData = JSON.parse(jsonString);
+
+                // Valida la struttura dei dati
+                if (!saveData.version || !saveData.stats || !saveData.achievements) {
+                    showToastMessage('Codice di salvataggio non valido', 'error');
+                    return;
+                }
+
+                // Ripristina tutti i dati
+                stats = saveData.stats || stats;
+                achievements = saveData.achievements || achievements;
+                dailyChallenges = saveData.dailyChallenges || dailyChallenges;
+                customChallenges = saveData.customChallenges || customChallenges;
+                puzzleLevelCompleted = saveData.puzzleLevelCompleted || puzzleLevelCompleted;
+                customSettings = saveData.customSettings || customSettings;
+                currentSnakeSkin = saveData.currentSnakeSkin || 'classic';
+                snakeSkins = saveData.snakeSkins || snakeSkins;
+
+                // Salva in localStorage
+                localStorage.setItem('snakeGameStats', JSON.stringify(stats));
+                localStorage.setItem('snakeGameAchievements', JSON.stringify(achievements));
+                localStorage.setItem('snakeDailyChallenges', JSON.stringify(dailyChallenges));
+                localStorage.setItem('snakeCustomChallenges', JSON.stringify(customChallenges));
+                localStorage.setItem('snakePuzzleLevelCompleted', JSON.stringify(puzzleLevelCompleted));
+                localStorage.setItem('snakeGameSettings', JSON.stringify(customSettings));
+                localStorage.setItem('snakeCurrentSkin', currentSnakeSkin);
+                localStorage.setItem('snakeSkins', JSON.stringify(snakeSkins));
+
+                // Applica le impostazioni
+                applyLanguage();
+                
+                // Chiudi il modal
+                closeSaveLoadModal();
+                
+                showToastMessage('Dati caricati con successo!', 'success');
+            } catch (error) {
+                console.error('Errore nel caricamento:', error);
+                showToastMessage('Errore: codice di salvataggio corrotto', 'error');
+            }
+        }
+
+        function resetGameData() {
+            const confirmed = confirm('⚠️ Sei sicuro di voler resettare tutti i dati?\nPuoi recuperarli in seguito con il codice di salvataggio.');
+            
+            if (confirmed) {
+                // Ripristina i valori di default
+                stats = {
+                    maxScore: 0,
+                    maxLevel: 0,
+                    gamesPlayed: 0,
+                    totalPlayTime: 0,
+                    totalFoodEaten: 0,
+                    lastPlayDate: new Date().toLocaleDateString('it-IT'),
+                    sessionCount: 0
+                };
+
+                achievements = new Array(21).fill(false);
+                dailyChallenges = [
+                    { id: 'daily_50_food', name: { it: 'Ghiotto', en: 'Foodie' }, icon: '🍎', desc: { it: 'Mangia 50 cibi', en: 'Eat 50 foods' }, target: 50, progress: 0, completed: false, reward: 100 },
+                    { id: 'daily_level_10', name: { it: 'Ascesa', en: 'Rise' }, icon: '📈', desc: { it: 'Raggiungi livello 10', en: 'Reach level 10' }, target: 10, progress: 0, completed: false, reward: 150 },
+                    { id: 'daily_score_500', name: { it: 'Centinaia', en: 'Hundreds' }, icon: '💯', desc: { it: 'Raggiungi 500 punti', en: 'Reach 500 points' }, target: 500, progress: 0, completed: false, reward: 200 }
+                ];
+                customChallenges = [
+                    { id: 'challenge_level_3', name: { it: 'Sfida Livello 3', en: 'Level 3 Challenge' }, icon: '🎯', desc: { it: 'Raggiungi il livello 3', en: 'Reach level 3' }, type: 'level', target: 3 },
+                    { id: 'challenge_score_1000', name: { it: 'Sfida 1000 Punti', en: '1000 Points Challenge' }, icon: '🚀', desc: { it: 'Raggiungi 1000 punti', en: 'Reach 1000 points' }, type: 'score', target: 1000 },
+                    { id: 'challenge_200_food', name: { it: 'Sfida Maratona', en: 'Marathon Challenge' }, icon: '⭐', desc: { it: 'Mangia 200 cibi', en: 'Eat 200 foods' }, type: 'food', target: 200 }
+                ];
+                puzzleLevelCompleted = new Array(5).fill(false);
+                currentSnakeSkin = 'classic';
+                snakeSkins = [
+                    { name: 'Classic', unlocked: true, emoji: '🟢' },
+                    { name: 'Gold', unlocked: false, emoji: '🟡' },
+                    { name: 'Fire', unlocked: false, emoji: '🔴' },
+                    { name: 'Ice', unlocked: false, emoji: '🔵' },
+                    { name: 'Purple', unlocked: false, emoji: '🟣' },
+                    { name: 'Christmas', unlocked: false, emoji: '🎄' },
+                    { name: 'Rainbow', unlocked: false, emoji: '🌈' },
+                    { name: 'Neon', unlocked: false, emoji: '💜' }
+                ];
+
+                // Resetta le impostazioni
+                customSettings = {
+                    wallCollision: true,
+                    accelerationRate: 0.995,
+                    minSpeed: 3,
+                    pointsPerFood: 10,
+                    pointsPerLevel: 100,
+                    language: 'it',
+                    showGrid: false,
+                    enableSound: true,
+                    darkMode: false,
+                    controlType: 'arrows',
+                    enableTouchControls: true
+                };
+
+                // Salva everything in localStorage
+                localStorage.setItem('snakeGameStats', JSON.stringify(stats));
+                localStorage.setItem('snakeGameAchievements', JSON.stringify(achievements));
+                localStorage.setItem('snakeDailyChallenges', JSON.stringify(dailyChallenges));
+                localStorage.setItem('snakeCustomChallenges', JSON.stringify(customChallenges));
+                localStorage.setItem('snakePuzzleLevelCompleted', JSON.stringify(puzzleLevelCompleted));
+                localStorage.setItem('snakeGameSettings', JSON.stringify(customSettings));
+                localStorage.setItem('snakeCurrentSkin', currentSnakeSkin);
+                localStorage.setItem('snakeSkins', JSON.stringify(snakeSkins));
+
+                // Applica le impostazioni di default
+                applyLanguage();
+                
+                // Chiudi il modal
+                closeSaveLoadModal();
+                
+                showToastMessage('Dati resettati! Puoi recuperarli con il codice di salvataggio', 'success');
+            }
+        }
+
+        
+        loadStats();
+        applyLanguage();
+        drawGame();
+
+        // Add CSS animation
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(400px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideInBottom {
+                from {
+                    transform: translateY(100px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+            @keyframes slideOutBottom {
+                from {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateY(100px);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>
