@@ -550,7 +550,10 @@
         <p><span id="finalScoreLabel">Punteggio Finale:</span> <strong id="finalScore">0</strong></p>
         <p><span id="finalLevelLabel">Livello Raggiunto:</span> <strong id="finalLevel">1</strong></p>
         <p id="newAchievement" style="color: #667eea; font-weight: bold; margin-top: 15px; display: none;"></p>
-        <button id="retryBtn" onclick="resetGame()" style="margin-top: 20px;">Riprova</button>
+        <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
+            <button id="retryBtn" onclick="restartGame()" style="flex:1;background:#667eea;color:white;border:none;padding:12px;border-radius:10px;cursor:pointer;font-weight:bold;">Riprova</button>
+            <button id="exitBtn" onclick="resetGame()" style="flex:1;background:#ccc;color:#333;border:none;padding:12px;border-radius:10px;cursor:pointer;font-weight:bold;">Esci</button>
+        </div>
     </div>
 
     <div class="overlay" id="achievementsOverlay"></div>
@@ -713,7 +716,7 @@
         </div>
 
         <div style="text-align:center;padding:15px;margin-top:10px;border-top:1px solid #ddd;color:#999;font-size:0.9em;">
-            <p id="versionText">🐍 Snake Game v1.0.0🐍</p>
+            <p id="versionText">🐍 Snake Game v1.0.1🐍</p>
         <p id="versionText">🐍 Made By Noskyn🐍</p>
         </div>
 
@@ -2519,7 +2522,16 @@
             clearInterval(gameLoop);
             newlyUnlockedThisSession = [];
 
-            snake = [{ x: 10, y: 10 }];
+            // Starting position - if in puzzle mode, use the puzzle start position
+            if (puzzleMode && currentPuzzleLevel !== null && currentPuzzleLevel !== undefined && puzzleLevels[currentPuzzleLevel]) {
+                const level = puzzleLevels[currentPuzzleLevel];
+                puzzleObstacles = level.obstacles || [];
+                snake = [{ x: level.startPos.x, y: level.startPos.y }];
+            } else {
+                const startX = Math.floor(tileCount / 2);
+                const startY = Math.floor(tileCount / 2);
+                snake = [{ x: startX, y: startY }];
+            }
             dx = 1;
             dy = 0;
             nextDx = 1;
@@ -2543,6 +2555,11 @@
             };
 
             drawGame();
+        }
+
+        function restartGame() {
+            resetGame();
+            startGame();
         }
 
         function endGame() {
@@ -2685,9 +2702,14 @@
 
         // Keyboard controls
         document.addEventListener('keydown', (e) => {
+            const active = document.activeElement;
+            const isTyping = active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable);
+
             if (!gameRunning) {
-                if (e.key === ' ') {
-                    startGame();
+                // Start / restart the game with Enter or Space when not typing in an input
+                if (!isTyping && (e.key === ' ' || e.key === 'Enter')) {
+                    e.preventDefault();
+                    restartGame();
                 }
                 return;
             }
