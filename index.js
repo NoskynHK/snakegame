@@ -1,35 +1,35 @@
 /* snake-i18n.js — Deutsch + traduzioni EN complete + pulsante "Torna all'Hub"
    Includilo DOPO lo <script> principale:  <script src="snake-i18n.js"></script> */
 (function () {
-  const HUB_URL = 'https://noskynhk.github.io/'; // <-- metti qui il link esatto del tuo hub
+  const HUB_URL = 'https://noskynhk.github.io/snakegame'; // <-- metti qui il link esatto del tuo hub
 
   // Una riga = italiano|inglese|tedesco   (inglese vuoto = già gestito dal gioco)
   const RAW = `
-▶ Inizia Gioco||▶ Spiel starten
-🔄 Ricomincia||🔄 Neustart
-⏸ Pausa||⏸ Pause
-⏸ In Gioco|⏸ Playing|⏸ Läuft
-▶ Riprendi|▶ Resume|▶ Weiter
-🏆 Achievement||🏆 Erfolge
-⚙️ Impostazioni||⚙️ Einstellungen
-💾 Salva/Carica|💾 Save/Load|💾 Speichern/Laden
-📋 Istruzioni:||📋 Anleitung:
-✅ Usa i tasti freccia per muoverti||✅ Steuere dich mit den Pfeiltasten
-✅ Mangia il cibo rosso 🍎 per crescere||✅ Friss das rote Futter 🍎, um zu wachsen
-✅ Non scontrarti con i muri o con te stesso!||✅ Prall nicht gegen Wände oder dich selbst!
-✅ Più cibo mangi, più veloce diventa il gioco||✅ Je mehr du frisst, desto schneller wird das Spiel
-✅ Sblocca achievement raggiungendo i livelli||✅ Schalte Erfolge frei, indem du Level erreichst
-⚠️ Cambiando le impostazioni non classiche, gli achievement non si sbloccheranno finché non ripristini le impostazioni predefinite.||⚠️ Wenn du Einstellungen änderst, werden keine Erfolge freigeschaltet, bis du die Standardeinstellungen wiederherstellst.
-⚙️ IMPOSTAZIONI||⚙️ EINSTELLUNGEN
-⚠️ ATTENZIONE: Non sei in Modalità Classica!||⚠️ ACHTUNG: Du bist nicht im klassischen Modus!
+ Inizia Gioco|| Spiel starten
+ Ricomincia|| Neustart
+ Pausa|| Pause
+ In Gioco| Playing| Läuft
+ Riprendi| Resume| Weiter
+ Achievement|| Erfolge
+ Impostazioni|| Einstellungen
+ Salva/Carica| Save/Load| Speichern/Laden
+ Istruzioni:|| Anleitung:
+ Usa i tasti freccia per muoverti|| Steuere dich mit den Pfeiltasten
+ Mangia il cibo rosso  per crescere|| Friss das rote Futter , um zu wachsen
+ Non scontrarti con i muri o con te stesso!|| Prall nicht gegen Wände oder dich selbst!
+ Più cibo mangi, più veloce diventa il gioco|| Je mehr du frisst, desto schneller wird das Spiel
+ Sblocca achievement raggiungendo i livelli|| Schalte Erfolge frei, indem du Level erreichst
+ Cambiando le impostazioni non classiche, gli achievement non si sbloccheranno finché non ripristini le impostazioni predefinite.|| Wenn du Einstellungen änderst, werden keine Erfolge freigeschaltet, bis du die Standardeinstellungen wiederherstellst.
+ IMPOSTAZIONI|| EINSTELLUNGEN
+ ATTENZIONE: Non sei in Modalità Classica!|| ACHTUNG: Du bist nicht im klassischen Modus!
 Gli Achievement NON verranno sbloccati finché non torni alle impostazioni predefinite.||Erfolge werden NICHT freigeschaltet, bis du die Standardeinstellungen wiederherstellst.
-🔗 Collisione Muri:||🔗 Wandkollision:
+ Collisione Muri:|| Wandkollision:
 Perdi se tocchi il muro (Classico)||Du verlierst, wenn du die Wand berührst (Klassisch)
-⏱️ Accelerazione (ms per livello):||⏱️ Beschleunigung (ms pro Level):
-🎯 Velocità Minima (ms):||🎯 Mindestgeschwindigkeit (ms):
-🍎 Punti per Cibo:||🍎 Punkte pro Futter:
+ Accelerazione (ms per livello):|| Beschleunigung (ms pro Level):
+ Velocità Minima (ms):|| Mindestgeschwindigkeit (ms):
+ Punti per Cibo:|| Punkte pro Futter:
 Moltiplicato per il livello.||Mit dem Level multipliziert.
-📈 Livelli ogni X punti:||📈 Level alle X Punkte:
+ Livelli ogni X punti:|| Level alle X Punkte:
 Valore predefinito:||Standardwert:
 punti||Punkte
 Punti||Punkte
