@@ -1,7 +1,7 @@
 /* snake-i18n.js — Deutsch + traduzioni EN complete + pulsante "Torna all'Hub"
    Includilo DOPO lo <script> principale:  <script src="snake-i18n.js"></script> */
 (function () {
-  const HUB_URL = 'https://noskynhk.github.io/snakegame'; // <-- metti qui il link esatto del tuo hub
+  const HUB_URL = 'https://noskynhk.github.io/projecthub/'; // <-- metti qui il link esatto del tuo hub
 
   // Una riga = italiano|inglese|tedesco   (inglese vuoto = già gestito dal gioco)
   const RAW = `
